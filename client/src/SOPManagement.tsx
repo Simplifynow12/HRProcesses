@@ -147,8 +147,8 @@ export default function SOPManagement() {
   return (
     <Box sx={{ maxWidth: 900, mx: 'auto', p: 3 }}>
       <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 10, lg: 8 }} sx={{ width: '100%' }}>
-          <Paper elevation={4} sx={{ p: 3, width: '100%', maxWidth: 900, mx: 'auto', background: 'linear-gradient(120deg, #fffbe7 0%, #e3f0ff 100%)', mb: 3 }}>
+        <Grid size={12} sx={{ maxWidth: 900, mx: 'auto' }}>
+          <Paper elevation={4} sx={{ p: 3, background: 'linear-gradient(120deg, #fffbe7 0%, #e3f0ff 100%)', mb: 3 }}>
             <Typography variant="h6" fontWeight={700} color="secondary.main" gutterBottom>
               Why SOPs Matter
             </Typography>
@@ -168,8 +168,8 @@ export default function SOPManagement() {
             </Box>
           </Paper>
         </Grid>
-        <Grid size={{ xs: 12, md: 10, lg: 8 }} sx={{ width: '100%' }}>
-          <Paper elevation={4} sx={{ p: 3, mb: 3, width: '100%', maxWidth: 900, mx: 'auto', background: 'linear-gradient(90deg, #e3ffe8 0%, #eaf6ff 100%)' }}>
+        <Grid size={12} sx={{ maxWidth: 900, mx: 'auto' }}>
+          <Paper elevation={4} sx={{ p: 3, mb: 3, background: 'linear-gradient(90deg, #e3ffe8 0%, #eaf6ff 100%)' }}>
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
               <Typography variant="h5" fontWeight={700} color="primary.main">
                 Standard Operating Procedures
