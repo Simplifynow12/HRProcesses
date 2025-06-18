@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Typography,
   Card,
   CardContent,
-  CardActions,
   Button,
   Stepper,
   Step,
@@ -18,11 +17,8 @@ import {
   DialogActions,
   TextField,
   Chip,
-  Divider,
   Stack,
   Alert,
-  Paper,
-  StepContent,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import InfoIcon from '@mui/icons-material/Info';
@@ -88,7 +84,7 @@ export default function Onboarding() {
       </Stepper>
       <Grid container spacing={3}>
         {activeStep === 0 && (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #e3f0ff 0%, #f3ffe3 100%)' }}>
               <CardContent>
                 <Stack direction="row" alignItems="center" spacing={2} mb={2}>
@@ -116,7 +112,7 @@ export default function Onboarding() {
           </Grid>
         )}
         {activeStep === 1 && (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #fffbe7 0%, #e3f0ff 100%)' }}>
               <CardContent>
                 <Stack direction="row" alignItems="center" spacing={2} mb={2}>
@@ -148,8 +144,8 @@ export default function Onboarding() {
           </Grid>
         )}
         {activeStep === 2 && (
-          <Grid item xs={12}>
-            <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #e3ffe8 0%, #eaf6ff 100%)' }}>
+          <Grid size={12}>
+            <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #ffe3f0 0%, #e3f0ff 100%)' }}>
               <CardContent>
                 <Stack direction="row" alignItems="center" spacing={2} mb={2}>
                   <AssignmentIndIcon color="success" fontSize="large" />
@@ -177,8 +173,8 @@ export default function Onboarding() {
           </Grid>
         )}
         {activeStep === 3 && (
-          <Grid item xs={12}>
-            <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #eaf6ff 0%, #fffbe7 100%)' }}>
+          <Grid size={12}>
+            <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #f0e3ff 0%, #ffe3f0 100%)' }}>
               <CardContent>
                 <Stack direction="row" alignItems="center" spacing={2} mb={2}>
                   <ListAltIcon color="info" fontSize="large" />
@@ -212,8 +208,8 @@ export default function Onboarding() {
           </Grid>
         )}
         {activeStep === 4 && (
-          <Grid item xs={12}>
-            <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #e3f0ff 0%, #fffbe7 100%)' }}>
+          <Grid size={12}>
+            <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #e3f0ff 0%, #f0e3ff 100%)' }}>
               <CardContent>
                 <Stack direction="row" alignItems="center" spacing={2} mb={2}>
                   <InfoIcon color="primary" fontSize="large" />
@@ -238,7 +234,7 @@ export default function Onboarding() {
           </Grid>
         )}
         {activeStep === 5 && (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #e3ffe8 0%, #eaf6ff 100%)' }}>
               <CardContent>
                 <Stack direction="row" alignItems="center" spacing={2} mb={2}>
@@ -264,7 +260,7 @@ export default function Onboarding() {
           </Grid>
         )}
         {activeStep === 6 && (
-          <Grid item xs={12}>
+          <Grid size={12}>
             <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #fffbe7 0%, #e3f0ff 100%)' }}>
               <CardContent>
                 <Stack direction="row" alignItems="center" spacing={2} mb={2}>
