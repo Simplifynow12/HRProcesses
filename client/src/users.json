@@ -1,0 +1,26 @@
+[
+  {
+    "username": "admin",
+    "password": "admin123",
+    "name": "Ad Min",
+    "role": "operations_lead"
+  },
+  {
+    "username": "hrmanager",
+    "password": "hrpass",
+    "name": "Haych Arr",
+    "role": "hr_manager"
+  },
+  {
+    "username": "newhire",
+    "password": "welcome",
+    "name": "Noo Hiyer",
+    "role": "employee"
+  },
+  {
+    "username": "superadmin",
+    "password": "superpass",
+    "name": "Sue Peradmin",
+    "role": "superadmin"
+  }
+] 
