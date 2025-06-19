@@ -5,6 +5,8 @@ import SOPManagement from './SOPManagement';
 import Layout from './Layout';
 import Onboarding from './Onboarding';
 import Recruitment from './Recruitment';
+import Training from './Training';
+import TrainingManagement from './TrainingManagement';
 
 interface User {
   username: string;
@@ -13,10 +15,45 @@ interface User {
   role: string;
 }
 
-const userStories = [
-  { label: 'SOP Management', component: <SOPManagement /> },
-  { label: 'Onboarding', component: <Onboarding /> },
-  { label: 'Recruitment', component: <Recruitment /> },
+interface TrainingProgram {
+  id: number;
+  title: string;
+  description: string;
+  duration: string;
+  category: string;
+  progress: number;
+  enrolled: boolean;
+}
+
+// Initial training data
+const initialTrainings: TrainingProgram[] = [
+  {
+    id: 1,
+    title: "React Advanced Concepts",
+    description: "Deep dive into React hooks, context, and performance optimization",
+    duration: "8 weeks",
+    category: "Technical",
+    progress: 0,
+    enrolled: false
+  },
+  {
+    id: 2,
+    title: "Leadership Fundamentals",
+    description: "Essential leadership skills for career growth",
+    duration: "4 weeks",
+    category: "Soft Skills",
+    progress: 0,
+    enrolled: false
+  },
+  {
+    id: 3,
+    title: "Project Management Basics",
+    description: "Introduction to project management methodologies",
+    duration: "6 weeks",
+    category: "Management",
+    progress: 0,
+    enrolled: false
+  }
 ];
 
 function App() {
@@ -25,12 +62,77 @@ function App() {
   const [error, setError] = useState('');
   const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
   const [tab, setTab] = useState(0);
+  const [trainings, setTrainings] = useState<TrainingProgram[]>(initialTrainings);
+
+  const handleUpdateTrainings = (updatedTrainings: TrainingProgram[]) => {
+    // Preserve enrollment and progress data when updating trainings
+    const updatedWithProgress = updatedTrainings.map(newTraining => {
+      const existingTraining = trainings.find(t => t.id === newTraining.id);
+      if (existingTraining) {
+        return {
+          ...newTraining,
+          progress: existingTraining.progress || 0,
+          enrolled: existingTraining.enrolled || false
+        };
+      }
+      return {
+        ...newTraining,
+        progress: 0,
+        enrolled: false
+      };
+    });
+    setTrainings(updatedWithProgress);
+  };
+
+  const handleEnrollment = (trainingId: number, enrolled: boolean) => {
+    setTrainings(trainings.map(training =>
+      training.id === trainingId
+        ? { ...training, enrolled }
+        : training
+    ));
+  };
+
+  const handleProgressUpdate = (trainingId: number, progress: number) => {
+    setTrainings(trainings.map(training =>
+      training.id === trainingId
+        ? { ...training, progress }
+        : training
+    ));
+  };
 
   const navItems = [
     { label: 'SOP Management', roles: ['operations_lead', 'superadmin'] },
     { label: 'Onboarding', roles: ['employee'] },
     { label: 'Recruitment', roles: ['hr_manager', 'superadmin'] },
+    { label: 'Training & Development', roles: ['employee'] },
+    { label: 'Training Management', roles: ['operations_lead'] },
   ];
+
+  const userStories = [
+    { label: 'SOP Management', component: SOPManagement },
+    { label: 'Onboarding', component: Onboarding },
+    { label: 'Recruitment', component: Recruitment },
+    { 
+      label: 'Training & Development', 
+      component: () => (
+        <Training 
+          trainings={trainings}
+          onEnrollment={handleEnrollment}
+          onProgressUpdate={handleProgressUpdate}
+        />
+      )
+    },
+    { 
+      label: 'Training Management', 
+      component: () => (
+        <TrainingManagement 
+          trainings={trainings}
+          onTrainingsUpdate={handleUpdateTrainings}
+        />
+      )
+    },
+  ];
+
   const allowedTabs = navItems
     .map((item, idx) => ({ ...item, idx }))
     .filter(item => item.roles.includes(loggedInUser?.role || ''));
@@ -55,10 +157,17 @@ function App() {
   };
 
   if (loggedInUser) {
-    const handleLogout = () => setLoggedInUser(null);
+    const handleLogout = () => {
+      setLoggedInUser(null);
+      // Reset trainings to initial state on logout
+      setTrainings(initialTrainings);
+    };
+
+    const CurrentComponent = userStories[tab].component;
+
     return (
       <Layout user={loggedInUser} selected={tab} onSelect={setTab} onLogout={handleLogout}>
-        {allowedTabs.some(t => t.idx === tab) ? userStories[tab].component : null}
+        {allowedTabs.some(t => t.idx === tab) && <CurrentComponent />}
       </Layout>
     );
   }

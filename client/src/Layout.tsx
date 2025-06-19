@@ -16,6 +16,7 @@ import {
 import DescriptionIcon from '@mui/icons-material/Description';
 import ChecklistIcon from '@mui/icons-material/Checklist';
 import GroupIcon from '@mui/icons-material/Group';
+import SchoolIcon from '@mui/icons-material/School';
 import MenuIcon from '@mui/icons-material/Menu';
 import LogoutIcon from '@mui/icons-material/Logout';
 import Tooltip from '@mui/material/Tooltip';
@@ -28,6 +29,8 @@ const navItems = [
   { label: 'SOP Management', icon: <DescriptionIcon />, roles: ['operations_lead', 'superadmin'] },
   { label: 'Onboarding', icon: <ChecklistIcon />, roles: ['employee'] },
   { label: 'Recruitment', icon: <GroupIcon />, roles: ['hr_manager', 'superadmin'] },
+  { label: 'Training & Development', icon: <SchoolIcon />, roles: ['employee'] },
+  { label: 'Training Management', icon: <SchoolIcon />, roles: ['operations_lead'] },
 ];
 
 interface LayoutProps {
