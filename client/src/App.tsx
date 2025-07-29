@@ -105,11 +105,18 @@ function App() {
     { label: 'Onboarding', roles: ['employee'] },
     { label: 'Recruitment', roles: ['hr_manager', 'superadmin'] },
     { label: 'Training & Development', roles: ['employee'] },
-    { label: 'Training Management', roles: ['operations_lead'] },
+    { label: 'Training Management', roles: ['operations_lead', 'superadmin'] },
   ];
 
   const userStories = [
-    { label: 'SOP Management', component: SOPManagement },
+    { 
+      label: 'SOP Management', 
+      component: () => {
+        console.log('App - loggedInUser:', loggedInUser);
+        console.log('App - userRole being passed:', loggedInUser?.role);
+        return <SOPManagement userRole={loggedInUser?.role} />;
+      }
+    },
     { label: 'Onboarding', component: Onboarding },
     { label: 'Recruitment', component: Recruitment },
     { 

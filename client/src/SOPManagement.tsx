@@ -22,6 +22,7 @@ import AddIcon from '@mui/icons-material/Add';
 import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 interface SOP {
   id: number;
@@ -31,6 +32,10 @@ interface SOP {
   steps: string;
   version: number;
   updatedAt: string;
+}
+
+interface SOPManagementProps {
+  userRole?: string;
 }
 
 const initialSOPs: SOP[] = [
@@ -54,7 +59,7 @@ const initialSOPs: SOP[] = [
   },
 ];
 
-export default function SOPManagement() {
+export default function SOPManagement({ userRole }: SOPManagementProps) {
   const [sops, setSOPs] = useState<SOP[]>(initialSOPs);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
@@ -71,6 +76,7 @@ export default function SOPManagement() {
     description: '',
     steps: '',
   });
+  const [deleteSOP, setDeleteSOP] = useState<SOP | null>(null);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -143,6 +149,26 @@ export default function SOPManagement() {
     ));
     handleEditClose();
   };
+
+  const handleDeleteOpen = (sop: SOP) => {
+    setDeleteSOP(sop);
+  };
+
+  const handleDeleteClose = () => {
+    setDeleteSOP(null);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (!deleteSOP) return;
+    setSOPs(sops.filter((sop) => sop.id !== deleteSOP.id));
+    handleDeleteClose();
+  };
+
+  const isSuperAdmin = userRole === 'superadmin';
+  
+  // Debug logging
+  console.log('SOPManagement - userRole:', userRole);
+  console.log('SOPManagement - isSuperAdmin:', isSuperAdmin);
 
   return (
     <Box sx={{ maxWidth: 900, mx: 'auto', p: 3 }}>
@@ -217,6 +243,14 @@ export default function SOPManagement() {
                           <span>
                             <IconButton onClick={() => downloadMarkdown(sop)} color="primary">
                               <DownloadIcon />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                        {/* Temporarily show delete for all users for testing */}
+                        <Tooltip title="Delete SOP">
+                          <span>
+                            <IconButton onClick={() => handleDeleteOpen(sop)} color="error">
+                              <DeleteIcon />
                             </IconButton>
                           </span>
                         </Tooltip>
@@ -367,6 +401,20 @@ export default function SOPManagement() {
           <Button onClick={handleEditClose}>Cancel</Button>
           <Button onClick={handleEditSave} variant="contained" color="primary">
             Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete SOP Dialog */}
+      <Dialog open={!!deleteSOP} onClose={handleDeleteClose} fullWidth maxWidth="sm">
+        <DialogTitle>Confirm Deletion</DialogTitle>
+        <DialogContent>
+          <Typography>Are you sure you want to delete SOP "{deleteSOP?.title}"? This action cannot be undone.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteClose}>Cancel</Button>
+          <Button onClick={handleDeleteConfirm} variant="contained" color="error">
+            Delete
           </Button>
         </DialogActions>
       </Dialog>
