@@ -63,7 +63,18 @@ const initialSOPs: SOP[] = [
 ];
 
 export default function SOPManagement({ userRole }: SOPManagementProps) {
-  const [sops, setSOPs] = useState<SOP[]>(initialSOPs);
+  // Load SOPs from localStorage on component mount
+  const loadSOPsFromStorage = (): SOP[] => {
+    try {
+      const stored = localStorage.getItem('hr-sops');
+      return stored ? JSON.parse(stored) : initialSOPs;
+    } catch (error) {
+      console.error('Error loading SOPs from storage:', error);
+      return initialSOPs;
+    }
+  };
+
+  const [sops, setSOPs] = useState<SOP[]>(loadSOPsFromStorage);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     title: '',
@@ -105,10 +116,19 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
     setForm({ ...form, links: newLinks });
   };
 
+  // Save SOPs to localStorage whenever they change
+  const saveSOPsToStorage = (newSOPs: SOP[]) => {
+    try {
+      localStorage.setItem('hr-sops', JSON.stringify(newSOPs));
+    } catch (error) {
+      console.error('Error saving SOPs to storage:', error);
+    }
+  };
+
   const handleCreate = () => {
     // Validate links
     const validLinks = form.links.filter(link => link.trim() !== '' && /^https?:\/\//.test(link));
-    setSOPs([
+    const newSOPs = [
       ...sops,
       {
         id: sops.length + 1,
@@ -120,7 +140,9 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
         updatedAt: new Date().toISOString().slice(0, 10),
         links: validLinks,
       },
-    ]);
+    ];
+    setSOPs(newSOPs);
+    saveSOPsToStorage(newSOPs);
     handleClose();
   };
 
@@ -172,7 +194,7 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
     if (!editSOP) return;
     // Validate links
     const validLinks = editForm.links.filter(link => link.trim() !== '' && /^https?:\/\//.test(link));
-    setSOPs(sops.map((sop) =>
+    const newSOPs = sops.map((sop) =>
       sop.id === editSOP.id
         ? {
             ...sop,
@@ -182,7 +204,9 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
             updatedAt: new Date().toISOString().slice(0, 10),
           }
         : sop
-    ));
+    );
+    setSOPs(newSOPs);
+    saveSOPsToStorage(newSOPs);
     handleEditClose();
   };
 
@@ -196,7 +220,9 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
 
   const handleDeleteConfirm = () => {
     if (!deleteSOP) return;
-    setSOPs(sops.filter((sop) => sop.id !== deleteSOP.id));
+    const newSOPs = sops.filter((sop) => sop.id !== deleteSOP.id);
+    setSOPs(newSOPs);
+    saveSOPsToStorage(newSOPs);
     handleDeleteClose();
   };
 
