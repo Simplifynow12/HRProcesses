@@ -409,10 +409,28 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
                 {viewSOP.links && viewSOP.links.length > 0 && (
                   <Box mt={2}>
                     <Typography variant="subtitle1" fontWeight={600} gutterBottom>Links</Typography>
-                    <ul style={{ paddingLeft: 20 }}>
+                    <ul style={{ paddingLeft: 20, margin: 0 }}>
                       {viewSOP.links.map((link, idx) => (
-                        <li key={idx}>
-                          <a href={link} target="_blank" rel="noopener noreferrer">{link}</a>
+                        <li key={idx} style={{ marginBottom: '8px' }}>
+                          <a 
+                            href={link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{
+                              color: '#1976d2',
+                              textDecoration: 'underline',
+                              cursor: 'pointer',
+                              wordBreak: 'break-all'
+                            }}
+                            onMouseEnter={(e) => {
+                              (e.target as HTMLElement).style.color = '#1565c0';
+                            }}
+                            onMouseLeave={(e) => {
+                              (e.target as HTMLElement).style.color = '#1976d2';
+                            }}
+                          >
+                            {link}
+                          </a>
                         </li>
                       ))}
                     </ul>
