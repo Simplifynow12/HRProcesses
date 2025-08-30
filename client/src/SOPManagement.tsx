@@ -25,7 +25,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import MenuIcon from '@mui/icons-material/Menu';
+
 
 interface SOP {
   id: number;
@@ -445,14 +445,14 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
                 Standard Operating Procedures
               </Typography>
               <Stack direction="row" spacing={2}>
-                <Button
-                  variant="outlined"
-                  startIcon={<DownloadIcon />}
-                  onClick={() => handleDownloadMenuOpen({ currentTarget: document.body } as any, null)}
-                  sx={{ borderRadius: 3, fontWeight: 600 }}
-                >
-                  Download All
-                </Button>
+                                 <Button
+                   variant="outlined"
+                   startIcon={<DownloadIcon />}
+                   onClick={(e) => handleDownloadMenuOpen(e, null)}
+                   sx={{ borderRadius: 3, fontWeight: 600 }}
+                 >
+                   Download All
+                 </Button>
                 <Button
                   variant="contained"
                   startIcon={<AddIcon />}
