@@ -17,12 +17,15 @@ import {
   Stack,
   IconButton,
   Tooltip,
+  Menu,
+  MenuItem,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DownloadIcon from '@mui/icons-material/Download';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import MenuIcon from '@mui/icons-material/Menu';
 
 interface SOP {
   id: number;
@@ -93,6 +96,10 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
     links: [''], // Add links to editForm state
   });
   const [deleteSOP, setDeleteSOP] = useState<SOP | null>(null);
+  const [downloadMenu, setDownloadMenu] = useState<{ anchorEl: HTMLElement | null; sop: SOP | null }>({
+    anchorEl: null,
+    sop: null
+  });
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -148,6 +155,39 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
 
   const generateMarkdown = (sop: SOP) => `# ${sop.title}\n\n**Department:** ${sop.department}\n\n**Version:** v${sop.version}  \n**Last Updated:** ${sop.updatedAt}\n\n## Description\n${sop.description}\n\n## Steps\n${sop.steps}\n`;
 
+  const generatePlainText = (sop: SOP) => `${sop.title.toUpperCase()}\n\nDepartment: ${sop.department}\nVersion: v${sop.version}\nLast Updated: ${sop.updatedAt}\n\nDESCRIPTION\n${sop.description}\n\nSTEPS\n${sop.steps}\n`;
+
+  const generateHTML = (sop: SOP) => `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${sop.title}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        h1 { color: #1976d2; border-bottom: 2px solid #1976d2; padding-bottom: 10px; }
+        h2 { color: #424242; margin-top: 30px; }
+        .meta { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .meta span { font-weight: bold; }
+        .steps { background: #fff; padding: 20px; border-left: 4px solid #1976d2; }
+    </style>
+</head>
+<body>
+    <h1>${sop.title}</h1>
+    <div class="meta">
+        <span>Department:</span> ${sop.department}<br>
+        <span>Version:</span> v${sop.version}<br>
+        <span>Last Updated:</span> ${sop.updatedAt}
+    </div>
+    <h2>Description</h2>
+    <p>${sop.description}</p>
+    <h2>Steps</h2>
+    <div class="steps">
+        ${sop.steps.split('\n').map(step => `<p>${step}</p>`).join('')}
+    </div>
+</body>
+</html>`;
+
   const downloadMarkdown = (sop: SOP) => {
     const md = generateMarkdown(sop);
     const blob = new Blob([md], { type: 'text/markdown' });
@@ -155,6 +195,147 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
     const a = document.createElement('a');
     a.href = url;
     a.download = `${sop.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadPlainText = (sop: SOP) => {
+    const text = generatePlainText(sop);
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${sop.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadHTML = (sop: SOP) => {
+    const html = generateHTML(sop);
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${sop.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadPDF = (sop: SOP) => {
+    // Create a formatted document for PDF-like download
+    const content = generatePlainText(sop);
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${sop.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_PDF.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadMenuOpen = (event: React.MouseEvent<HTMLElement>, sop: SOP | null) => {
+    setDownloadMenu({ anchorEl: event.currentTarget, sop });
+  };
+
+  const handleDownloadMenuClose = () => {
+    setDownloadMenu({ anchorEl: null, sop: null });
+  };
+
+  const handleDownload = (format: string, sop: SOP | null) => {
+    if (sop) {
+      // Single SOP download
+      switch (format) {
+        case 'markdown':
+          downloadMarkdown(sop);
+          break;
+        case 'plaintext':
+          downloadPlainText(sop);
+          break;
+        case 'html':
+          downloadHTML(sop);
+          break;
+        case 'pdf':
+          downloadPDF(sop);
+          break;
+        default:
+          break;
+      }
+    } else {
+      // Bulk download all SOPs
+      switch (format) {
+        case 'markdown':
+          downloadAllSOPsMarkdown();
+          break;
+        case 'plaintext':
+          downloadAllSOPsPlainText();
+          break;
+        case 'html':
+          downloadAllSOPsHTML();
+          break;
+        case 'pdf':
+          downloadAllSOPsPDF();
+          break;
+        default:
+          break;
+      }
+    }
+    handleDownloadMenuClose();
+  };
+
+  const downloadAllSOPsMarkdown = () => {
+    const allContent = sops.map(sop => generateMarkdown(sop)).join('\n\n---\n\n');
+    const blob = new Blob([allContent], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `all_sops_${new Date().toISOString().split('T')[0]}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadAllSOPsPlainText = () => {
+    const allContent = sops.map(sop => generatePlainText(sop)).join('\n\n' + '='.repeat(50) + '\n\n');
+    const blob = new Blob([allContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `all_sops_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadAllSOPsHTML = () => {
+    const allContent = sops.map(sop => generateHTML(sop)).join('\n\n<hr>\n\n');
+    const blob = new Blob([allContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `all_sops_${new Date().toISOString().split('T')[0]}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadAllSOPsPDF = () => {
+    const allContent = sops.map(sop => generatePlainText(sop)).join('\n\n' + '='.repeat(50) + '\n\n');
+    const blob = new Blob([allContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `all_sops_${new Date().toISOString().split('T')[0]}_PDF.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -251,7 +432,8 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
                 <li>Create, view, and manage SOPs</li>
                 <li>Version control and update history</li>
                 <li>Department/task association</li>
-                <li>Download and share SOPs</li>
+                <li>Download SOPs in multiple formats (Markdown, Text, HTML)</li>
+                <li>Bulk download all SOPs at once</li>
               </ul>
             </Box>
           </Paper>
@@ -262,14 +444,24 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
               <Typography variant="h5" fontWeight={700} color="primary.main">
                 Standard Operating Procedures
               </Typography>
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleOpen}
-                sx={{ borderRadius: 3, fontWeight: 600, boxShadow: 2 }}
-              >
-                Create SOP
-              </Button>
+              <Stack direction="row" spacing={2}>
+                <Button
+                  variant="outlined"
+                  startIcon={<DownloadIcon />}
+                  onClick={() => handleDownloadMenuOpen({ currentTarget: document.body } as any, null)}
+                  sx={{ borderRadius: 3, fontWeight: 600 }}
+                >
+                  Download All
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleOpen}
+                  sx={{ borderRadius: 3, fontWeight: 600, boxShadow: 2 }}
+                >
+                  Create SOP
+                </Button>
+              </Stack>
             </Box>
             <List>
               {sops.map((sop) => (
@@ -301,9 +493,12 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
                             </IconButton>
                           </span>
                         </Tooltip>
-                        <Tooltip title="Download Markdown">
+                        <Tooltip title="Download SOP">
                           <span>
-                            <IconButton onClick={() => downloadMarkdown(sop)} color="primary">
+                            <IconButton 
+                              onClick={(e) => handleDownloadMenuOpen(e, sop)} 
+                              color="primary"
+                            >
                               <DownloadIcon />
                             </IconButton>
                           </span>
@@ -560,6 +755,63 @@ export default function SOPManagement({ userRole }: SOPManagementProps) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Download Menu */}
+      <Menu
+        anchorEl={downloadMenu.anchorEl}
+        open={Boolean(downloadMenu.anchorEl)}
+        onClose={handleDownloadMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        {downloadMenu.sop ? (
+          // Single SOP download options
+          <>
+            <MenuItem onClick={() => handleDownload('markdown', downloadMenu.sop)}>
+              <DownloadIcon sx={{ mr: 1 }} />
+              Download as Markdown (.md)
+            </MenuItem>
+            <MenuItem onClick={() => handleDownload('plaintext', downloadMenu.sop)}>
+              <DownloadIcon sx={{ mr: 1 }} />
+              Download as Plain Text (.txt)
+            </MenuItem>
+            <MenuItem onClick={() => handleDownload('html', downloadMenu.sop)}>
+              <DownloadIcon sx={{ mr: 1 }} />
+              Download as HTML (.html)
+            </MenuItem>
+            <MenuItem onClick={() => handleDownload('pdf', downloadMenu.sop)}>
+              <DownloadIcon sx={{ mr: 1 }} />
+              Download as Formatted Text (.txt)
+            </MenuItem>
+          </>
+        ) : (
+          // Bulk download all SOPs options
+          <>
+            <MenuItem onClick={() => handleDownload('markdown', null)}>
+              <DownloadIcon sx={{ mr: 1 }} />
+              Download All as Markdown (.md)
+            </MenuItem>
+            <MenuItem onClick={() => handleDownload('plaintext', null)}>
+              <DownloadIcon sx={{ mr: 1 }} />
+              Download All as Plain Text (.txt)
+            </MenuItem>
+            <MenuItem onClick={() => handleDownload('html', null)}>
+              <DownloadIcon sx={{ mr: 1 }} />
+              Download All as HTML (.html)
+            </MenuItem>
+            <MenuItem onClick={() => handleDownload('pdf', null)}>
+              <DownloadIcon sx={{ mr: 1 }} />
+              Download All as Formatted Text (.txt)
+            </MenuItem>
+          </>
+        )}
+      </Menu>
     </Box>
   );
 } 

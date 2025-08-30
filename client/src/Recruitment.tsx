@@ -292,32 +292,12 @@ Date: _________________`;
 
   const handleTemplateSubmit = () => {
     if (selectedCandidate && template) {
-      // Validate email address before sending
-      const candidateEmail = selectedCandidate.email;
-      if (candidateEmail && candidateEmail.trim() !== '') {
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (emailRegex.test(candidateEmail)) {
-          console.log(`E-signature offer letter sent to ${candidateEmail}`);
-          // Here you would typically integrate with your email service
-          // For now, we'll show a success message with the email address
-          setTemplateSubmitted(true);
-          
-          // Reset template selection
-          setTemplate('');
-          
-          // Show success message
-          setTimeout(() => {
-            setTemplateSubmitted(false);
-          }, 5000);
-        } else {
-          console.error('Invalid email format:', candidateEmail);
-          alert(`Invalid email format: ${candidateEmail}. Please update the candidate's email address.`);
-        }
-      } else {
-        console.error('No valid email address found for candidate');
-        alert('No valid email address found for this candidate. Please add an email address before sending the offer letter.');
-      }
+      console.log(`E-signature offer letter sent to ${selectedCandidate.email || 'candidate'}`);
+      setTemplateSubmitted(true);
+      setTemplate('');
+      setTimeout(() => {
+        setTemplateSubmitted(false);
+      }, 5000);
     }
     setTemplateDialog(false);
   };
@@ -337,10 +317,12 @@ Date: _________________`;
   };
 
   const hasValidEmail = (candidate: Candidate): boolean => {
-    if (!candidate.email || candidate.email.trim() === '') return false;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(candidate.email.trim());
+    return true; // Always return true to bypass email validation
   };
+
+
+
+
 
   const handleAddStaff = () => {
     if (validateForm()) {
@@ -380,17 +362,7 @@ Date: _________________`;
     }
   };
 
-  const validateEmail = (email: string): string => {
-    if (!email.trim()) return '';
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return 'Please enter a valid email address (e.g., user@domain.com)';
-    }
-    if (email.length > 254) {
-      return 'Email address is too long (maximum 254 characters)';
-    }
-    return '';
-  };
+
 
   const validatePhone = (phone: string): string => {
     if (!phone.trim()) return '';
@@ -415,8 +387,7 @@ Date: _________________`;
         if (value.trim().length < 2) return 'Role must be at least 2 characters long';
         return '';
       case 'email':
-        if (!value.trim()) return 'Email is required for offer letters';
-        return validateEmail(value);
+        return ''; // No email validation required
       case 'phone':
         return validatePhone(value);
       case 'address':
@@ -565,40 +536,40 @@ Date: _________________`;
           Recruitment Dashboard
         </Typography>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {/* Standby Staff Pool - always full width */}
+          {/* Team Member - always full width */}
           <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #e3ffe8 0%, #eaf6ff 100%)', width: '100%' }}>
             <CardContent>
-                             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-                 <Stack direction="row" alignItems="center" spacing={2}>
-                   <GroupAddIcon color="success" fontSize="large" />
-                   <Typography variant="h5" fontWeight={600} color="success.main">
-                     Standby Staff Pool
-                   </Typography>
-                 </Stack>
-                 <Button
-                   variant="contained"
-                   color="success"
-                   startIcon={<GroupAddIcon />}
-                   onClick={() => setAddStaffDialog(true)}
-                 >
-                   Add Staff
-                 </Button>
-               </Stack>
+              <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <GroupAddIcon color="success" fontSize="large" />
+                  <Typography variant="h5" fontWeight={600} color="success.main">
+                                         Team Member
+                  </Typography>
+                </Stack>
+                <Button
+                  variant="contained"
+                  color="success"
+                  startIcon={<GroupAddIcon />}
+                  onClick={() => setAddStaffDialog(true)}
+                >
+                  Add Team Member
+                </Button>
+              </Stack>
               <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
                 Click a name below to view candidate details and actions.
               </Typography>
               <TableContainer component={Paper}>
                 <Table size="small">
-                                     <TableHead>
-                     <TableRow>
-                       <TableCell>Name</TableCell>
-                       <TableCell>Role</TableCell>
-                       <TableCell>Email</TableCell>
-                       <TableCell>Status</TableCell>
-                       <TableCell>Readiness</TableCell>
-                       <TableCell>Actions</TableCell>
-                     </TableRow>
-                   </TableHead>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Name</TableCell>
+                      <TableCell>Role</TableCell>
+                      <TableCell>Email</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Readiness</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
                   <TableBody>
                     {standby.map((c) => (
                       <TableRow
@@ -622,79 +593,81 @@ Date: _________________`;
                             </Typography>
                           </Stack>
                         </TableCell>
-                                                 <TableCell>
-                           <Typography>
-                             {c.role}
-                           </Typography>
-                         </TableCell>
-                         <TableCell>
-                           <Typography variant="body2" color="text.secondary">
-                             {c.email || 'N/A'}
-                           </Typography>
-                         </TableCell>
-                         <TableCell>
-                           <Chip
-                             label={c.status}
-                             color={c.status === 'Available' ? 'success' : 'default'}
-                             size="small"
-                           />
-                         </TableCell>
-                                                 <TableCell>
-                           <Chip
-                             label={c.readiness}
-                             color={c.readiness === 'Ready' ? 'info' : 'warning'}
-                             size="small"
-                           />
-                         </TableCell>
-                         <TableCell>
-                           <Tooltip title="Edit Staff Member">
-                             <IconButton
-                               size="small"
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 handleEditStaff(c);
-                               }}
-                               color="primary"
-                             >
-                               <AssignmentIndIcon fontSize="small" />
-                             </IconButton>
-                           </Tooltip>
-                         </TableCell>
-                       </TableRow>
-                     ))}
-                   </TableBody>
+                        <TableCell>
+                          <Typography>
+                            {c.role}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            {c.email || 'N/A'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={c.status}
+                            color={c.status === 'Available' ? 'success' : 'default'}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={c.readiness}
+                            color={c.readiness === 'Ready' ? 'info' : 'warning'}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                                                     <Tooltip title="Edit Team Member">
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditStaff(c);
+                              }}
+                              color="primary"
+                            >
+                              <AssignmentIndIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
                 </Table>
               </TableContainer>
             </CardContent>
           </Card>
 
-          {/* Selected candidate section */}
-          {selectedCandidate && (
+                     
+
+           {/* Selected candidate section */}
+           {selectedCandidate && (
             <>
-                             {/* Selected candidate header */}
-               <Typography variant="h4" fontWeight={800} color="primary.main">
-                 Selected: {selectedCandidate.name}
-               </Typography>
-               
-               {/* Contact Information */}
-               <Card elevation={2} sx={{ background: 'linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%)' }}>
-                 <CardContent>
-                   <Stack direction="row" spacing={4} flexWrap="wrap">
-                     <Box>
-                       <Typography variant="caption" color="text.secondary">Email</Typography>
-                       <Typography variant="body2">{selectedCandidate.email || 'Not provided'}</Typography>
-                     </Box>
-                     <Box>
-                       <Typography variant="caption" color="text.secondary">Phone</Typography>
-                       <Typography variant="body2">{selectedCandidate.phone || 'Not provided'}</Typography>
-                     </Box>
-                     <Box sx={{ minWidth: 200 }}>
-                       <Typography variant="caption" color="text.secondary">Address</Typography>
-                       <Typography variant="body2">{selectedCandidate.address || 'Not provided'}</Typography>
-                     </Box>
-                   </Stack>
-                 </CardContent>
-               </Card>
+              {/* Selected candidate header */}
+              <Typography variant="h4" fontWeight={800} color="primary.main">
+                Selected: {selectedCandidate.name}
+              </Typography>
+              
+              {/* Contact Information */}
+              <Card elevation={2} sx={{ background: 'linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%)' }}>
+                <CardContent>
+                  <Stack direction="row" spacing={4} flexWrap="wrap">
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Email</Typography>
+                      <Typography variant="body2">{selectedCandidate.email || 'Not provided'}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Phone</Typography>
+                      <Typography variant="body2">{selectedCandidate.phone || 'Not provided'}</Typography>
+                    </Box>
+                    <Box sx={{ minWidth: 200 }}>
+                      <Typography variant="caption" color="text.secondary">Address</Typography>
+                      <Typography variant="body2">{selectedCandidate.address || 'Not provided'}</Typography>
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </Card>
 
               {/* Standard Recruitment Workflow - Full width */}
               <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #e3f0ff 0%, #eaf6ff 100%)' }}>
@@ -725,23 +698,23 @@ Date: _________________`;
                       </Step>
                     ))}
                   </Stepper>
-                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                     <Button
-                       variant="outlined"
-                       color="primary"
-                       onClick={() => handlePreviousStage(selectedCandidate.name)}
-                       disabled={selectedCandidate.recruitmentStage === 0}
-                     >
-                       Previous Stage
-                     </Button>
-                     <Button
-                       variant="contained"
-                       color="primary"
-                       onClick={() => handleNextStage(selectedCandidate.name)}
-                     >
-                       Next Stage
-                     </Button>
-                   </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => handlePreviousStage(selectedCandidate.name)}
+                      disabled={selectedCandidate.recruitmentStage === 0}
+                    >
+                      Previous Stage
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => handleNextStage(selectedCandidate.name)}
+                    >
+                      Next Stage
+                    </Button>
+                  </Box>
                 </CardContent>
               </Card>
 
@@ -849,31 +822,27 @@ Date: _________________`;
                           label="Select Template"
                           onChange={(e) => setTemplate(e.target.value)}
                         >
-                                                     {signatureTemplates.map((t) => (
-                             <MenuItem key={t} value={t}>{t}</MenuItem>
-                           ))}
+                          {signatureTemplates.map((t) => (
+                            <MenuItem key={t} value={t}>{t}</MenuItem>
+                          ))}
                         </Select>
                       </FormControl>
-                                                                    <Button
-                         variant="contained"
-                         color="secondary"
-                         disabled={!template || !hasValidEmail(selectedCandidate!)}
-                         onClick={() => setOfferLetterPreview(true)}
-                         startIcon={<CheckCircleIcon />}
-                         fullWidth
-                       >
-                         Preview & Generate Document
-                       </Button>
-                                               {!hasValidEmail(selectedCandidate!) && (
-                          <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
-                            ⚠️ Candidate must have a valid email address to generate documents
-                          </Typography>
-                        )}
-                       {templateSubmitted && (
-                         <Alert severity="success" sx={{ mt: 2 }}>
-                           E-signature offer letter sent to {selectedCandidate?.email || 'candidate email'}! The candidate can now electronically sign the document.
-                         </Alert>
-                       )}
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        disabled={!template}
+                        onClick={() => setOfferLetterPreview(true)}
+                        startIcon={<CheckCircleIcon />}
+                        fullWidth
+                      >
+                        Preview & Generate Document
+                      </Button>
+
+                      {templateSubmitted && (
+                        <Alert severity="success" sx={{ mt: 2 }}>
+                          E-signature offer letter sent to {selectedCandidate?.email || 'candidate email'}! The candidate can now electronically sign the document.
+                        </Alert>
+                      )}
                     </CardContent>
                   </Card>
                 </Box>
@@ -903,406 +872,387 @@ Date: _________________`;
         </DialogActions>
       </Dialog>
 
-                     {/* Signature Template Dialog */}
-        <Dialog open={templateDialog} onClose={() => setTemplateDialog(false)} fullWidth maxWidth="xs">
-          <DialogTitle>Send E-Signature Offer Letter</DialogTitle>
-          <DialogContent>
-            {hasValidEmail(selectedCandidate!) ? (
-              <>
-                <Typography>
-                  The e-signature offer letter will be sent to <strong>{selectedCandidate?.email}</strong> for the position of <strong>{selectedCandidate?.role}</strong>.
-                </Typography>
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  This will send the offer letter with e-signature fields directly to the candidate's email address.
-                </Alert>
-                <Alert severity="warning" sx={{ mt: 1 }}>
-                  The candidate will be able to electronically sign the document to accept the offer.
-                </Alert>
-              </>
-            ) : (
-              <Alert severity="error">
-                Cannot send offer letter: Invalid or missing email address for this candidate.
-                Please update the candidate's email address before proceeding.
-              </Alert>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setTemplateDialog(false)}>Cancel</Button>
-            <Button 
+      {/* Signature Template Dialog */}
+      <Dialog open={templateDialog} onClose={() => setTemplateDialog(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Send E-Signature Offer Letter</DialogTitle>
+        <DialogContent>
+          <Typography>
+            The e-signature offer letter will be sent to <strong>{selectedCandidate?.email || 'candidate'}</strong> for the position of <strong>{selectedCandidate?.role}</strong>.
+          </Typography>
+          <Alert severity="info" sx={{ mt: 2 }}>
+            This will send the offer letter with e-signature fields directly to the candidate's email address.
+          </Alert>
+          <Alert severity="warning" sx={{ mt: 1 }}>
+            The candidate will be able to electronically sign the document to accept the offer.
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTemplateDialog(false)}>Cancel</Button>
+                      <Button 
               onClick={handleTemplateSubmit} 
               variant="contained" 
               color="secondary"
-              disabled={!hasValidEmail(selectedCandidate!)}
             >
               Send E-Signature Offer Letter
             </Button>
-          </DialogActions>
-        </Dialog>
+        </DialogActions>
+      </Dialog>
 
-        {/* Offer Letter Preview Dialog */}
-        <Dialog 
-          open={offerLetterPreview} 
-          onClose={() => setOfferLetterPreview(false)} 
-          fullWidth 
-          maxWidth="md"
-          PaperProps={{
-            sx: { minHeight: '70vh' }
-          }}
-        >
-          <DialogTitle>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Typography variant="h6">Offer Letter Preview</Typography>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={handleEditOfferLetter}
-                  startIcon={<AssignmentIndIcon />}
-                >
-                  Edit Template
-                </Button>
-                <Typography variant="caption" color="text.secondary">
-                  {selectedCandidate?.name} - {selectedCandidate?.role}
-                </Typography>
-              </Stack>
+      {/* Offer Letter Preview Dialog */}
+      <Dialog 
+        open={offerLetterPreview} 
+        onClose={() => setOfferLetterPreview(false)} 
+        fullWidth 
+        maxWidth="md"
+        PaperProps={{
+          sx: { minHeight: '70vh' }
+        }}
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Typography variant="h6">Offer Letter Preview</Typography>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleEditOfferLetter}
+                startIcon={<AssignmentIndIcon />}
+              >
+                Edit Template
+              </Button>
+              <Typography variant="caption" color="text.secondary">
+                {selectedCandidate?.name} - {selectedCandidate?.role}
+              </Typography>
             </Stack>
-          </DialogTitle>
-          <DialogContent>
-            <Box sx={{ 
-              border: '1px solid #e0e0e0', 
-              borderRadius: 1, 
-              p: 3, 
-              backgroundColor: '#fafafa',
-              fontFamily: 'serif',
-              fontSize: '14px',
-              lineHeight: 1.6,
-              whiteSpace: 'pre-line'
-            }}>
-              {generateOfferLetter()}
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ 
+            border: '1px solid #e0e0e0', 
+            borderRadius: 1, 
+            p: 3, 
+            backgroundColor: '#fafafa',
+            fontFamily: 'serif',
+            fontSize: '14px',
+            lineHeight: 1.6,
+            whiteSpace: 'pre-line'
+          }}>
+            {generateOfferLetter()}
+          </Box>
+          <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Recipient:</strong> {selectedCandidate?.email}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              <strong>Generated:</strong> {new Date().toLocaleString('en-GB')}
+            </Typography>
+            
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOfferLetterPreview(false)}>
+            Cancel
+          </Button>
+                     <Button 
+             onClick={() => {
+               setOfferLetterPreview(false);
+               setTemplateDialog(true);
+             }} 
+             variant="contained" 
+             color="secondary"
+           >
+             Send Offer Letter
+           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Offer Letter Template Dialog */}
+      <Dialog 
+        open={offerLetterEdit} 
+        onClose={() => setOfferLetterEdit(false)} 
+        fullWidth 
+        maxWidth="md"
+      >
+        <DialogTitle>Edit Offer Letter Template</DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="Company Name"
+                value={editableOfferLetter.companyName}
+                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, companyName: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label="HR Manager Name"
+                value={editableOfferLetter.hrManager}
+                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, hrManager: e.target.value }))}
+                fullWidth
+              />
             </Box>
-                         <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-               <Typography variant="body2" color="text.secondary">
-                 <strong>Recipient:</strong> {selectedCandidate?.email}
-               </Typography>
-               <Typography variant="body2" color="text.secondary">
-                 <strong>Generated:</strong> {new Date().toLocaleString('en-GB')}
-               </Typography>
-               {!hasValidEmail(selectedCandidate!) && (
-                 <Alert severity="error" sx={{ mt: 1 }}>
-                   ⚠️ Invalid email address. Please update the candidate's email before sending.
-                 </Alert>
-               )}
-             </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOfferLetterPreview(false)}>
-              Cancel
-            </Button>
-                         <Button 
-               onClick={() => {
-                 if (hasValidEmail(selectedCandidate!)) {
-                   setOfferLetterPreview(false);
-                   setTemplateDialog(true);
-                 } else {
-                   alert('Please ensure the candidate has a valid email address before sending the offer letter.');
-                 }
-               }} 
-               variant="contained" 
-               color="secondary"
-               disabled={!hasValidEmail(selectedCandidate!)}
-             >
-               Send Offer Letter
-             </Button>
-          </DialogActions>
-        </Dialog>
+            
+            <TextField
+              label="Company Address"
+              value={editableOfferLetter.companyAddress}
+              onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, companyAddress: e.target.value }))}
+              fullWidth
+              multiline
+              rows={2}
+            />
 
-        {/* Edit Offer Letter Template Dialog */}
-        <Dialog 
-          open={offerLetterEdit} 
-          onClose={() => setOfferLetterEdit(false)} 
-          fullWidth 
-          maxWidth="md"
-        >
-          <DialogTitle>Edit Offer Letter Template</DialogTitle>
-          <DialogContent>
-            <Stack spacing={3} sx={{ mt: 1 }}>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  label="Company Name"
-                  value={editableOfferLetter.companyName}
-                  onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, companyName: e.target.value }))}
-                  fullWidth
-                />
-                <TextField
-                  label="HR Manager Name"
-                  value={editableOfferLetter.hrManager}
-                  onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, hrManager: e.target.value }))}
-                  fullWidth
-                />
-              </Box>
-              
+            <Box sx={{ display: 'flex', gap: 2 }}>
               <TextField
-                label="Company Address"
+                label="Position"
+                value={editableOfferLetter.position}
+                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, position: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label="Start Date"
+                value={editableOfferLetter.startDate}
+                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, startDate: e.target.value }))}
+                fullWidth
+              />
+            </Box>
+
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="Location"
                 value={editableOfferLetter.companyAddress}
-                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, companyAddress: e.target.value }))}
+                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, location: e.target.value }))}
                 fullWidth
-                multiline
-                rows={2}
               />
+              <TextField
+                label="Employment Type"
+                value={editableOfferLetter.employmentType}
+                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, employmentType: e.target.value }))}
+                fullWidth
+              />
+            </Box>
 
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  label="Position"
-                  value={editableOfferLetter.position}
-                  onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, position: e.target.value }))}
-                  fullWidth
-                />
-                <TextField
-                  label="Start Date"
-                  value={editableOfferLetter.startDate}
-                  onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, startDate: e.target.value }))}
-                  fullWidth
-                />
-              </Box>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="Salary"
+                value={editableOfferLetter.salary}
+                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, salary: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                label="Response Deadline"
+                value={editableOfferLetter.responseDeadline}
+                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, responseDeadline: e.target.value }))}
+                fullWidth
+              />
+            </Box>
 
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  label="Location"
-                  value={editableOfferLetter.location}
-                  onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, location: e.target.value }))}
-                  fullWidth
-                />
-                <TextField
-                  label="Employment Type"
-                  value={editableOfferLetter.employmentType}
-                  onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, employmentType: e.target.value }))}
-                  fullWidth
-                />
-              </Box>
+            <TextField
+              label="Additional Terms & Conditions"
+              value={editableOfferLetter.additionalTerms}
+              onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, additionalTerms: e.target.value }))}
+              fullWidth
+              multiline
+              rows={4}
+              helperText="Customize the terms and conditions for this offer"
+            />
 
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  label="Salary"
-                  value={editableOfferLetter.salary}
-                  onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, salary: e.target.value }))}
-                  fullWidth
-                />
-                <TextField
-                  label="Response Deadline"
-                  value={editableOfferLetter.responseDeadline}
-                  onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, responseDeadline: e.target.value }))}
-                  fullWidth
-                />
-              </Box>
+            <Alert severity="info">
+              Changes made here will be reflected in the offer letter preview above.
+            </Alert>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOfferLetterEdit(false)}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveOfferLetter} 
+            variant="contained" 
+            color="primary"
+          >
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-              <TextField
-                label="Additional Terms & Conditions"
-                value={editableOfferLetter.additionalTerms}
-                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, additionalTerms: e.target.value }))}
-                fullWidth
-                multiline
-                rows={4}
-                helperText="Customize the terms and conditions for this offer"
-              />
+      {/* Add Staff Dialog */}
+      <Dialog open={addStaffDialog} onClose={handleCloseAddStaffDialog} fullWidth maxWidth="sm">
+                 <DialogTitle>Add New Team Member</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Full Name"
+              value={newStaff.name}
+              onChange={(e) => handleNewStaffChange('name', e.target.value)}
+              fullWidth
+              required
+              error={!!validationErrors.name}
+              helperText={validationErrors.name}
+            />
+            <TextField
+              label="Role/Position"
+              value={newStaff.role}
+              onChange={(e) => handleNewStaffChange('role', e.target.value)}
+              fullWidth
+              required
+              error={!!validationErrors.role}
+              helperText={validationErrors.role}
+            />
+            <TextField
+              label="Email Address"
+              type="email"
+              value={newStaff.email}
+              onChange={(e) => handleNewStaffChange('email', e.target.value)}
+              fullWidth
+              placeholder="example@email.com"
+              error={!!validationErrors.email}
+              helperText={validationErrors.email}
+            />
+            <TextField
+              label="Phone Number"
+              value={newStaff.phone}
+              onChange={(e) => handleNewStaffChange('phone', e.target.value)}
+              fullWidth
+              placeholder="+44 7700 900000"
+              error={!!validationErrors.phone}
+              helperText={validationErrors.phone}
+            />
+            <TextField
+              label="Address"
+              value={newStaff.address}
+              onChange={(e) => handleNewStaffChange('address', e.target.value)}
+              fullWidth
+              multiline
+              rows={2}
+              placeholder="Street, City, Postcode"
+              error={!!validationErrors.address}
+              helperText={validationErrors.address}
+            />
+            <FormControl fullWidth>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={newStaff.status}
+                label="Status"
+                onChange={(e) => handleNewStaffChange('status', e.target.value)}
+              >
+                <MenuItem value="Available">Available</MenuItem>
+                <MenuItem value="Unavailable">Unavailable</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Readiness</InputLabel>
+              <Select
+                value={newStaff.readiness}
+                label="Readiness"
+                onChange={(e) => handleNewStaffChange('readiness', e.target.value)}
+              >
+                <MenuItem value="Ready">Ready</MenuItem>
+                <MenuItem value="Pending">Pending</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseAddStaffDialog}>Cancel</Button>
+          <Button 
+            onClick={handleAddStaff} 
+            variant="contained" 
+            color="success"
+            disabled={!newStaff.name.trim() || !newStaff.role.trim()}
+          >
+            Add Staff
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-              <Alert severity="info">
-                Changes made here will be reflected in the offer letter preview above.
-              </Alert>
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setOfferLetterEdit(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSaveOfferLetter} 
-              variant="contained" 
-              color="primary"
-            >
-              Save Changes
-            </Button>
-          </DialogActions>
-        </Dialog>
-
-        {/* Add Staff Dialog */}
-               <Dialog open={addStaffDialog} onClose={handleCloseAddStaffDialog} fullWidth maxWidth="sm">
-         <DialogTitle>Add New Staff to Standby Pool</DialogTitle>
-         <DialogContent>
-                       <Stack spacing={2} sx={{ mt: 1 }}>
-              <TextField
-                label="Full Name"
-                value={newStaff.name}
-                onChange={(e) => handleNewStaffChange('name', e.target.value)}
-                fullWidth
-                required
-                error={!!validationErrors.name}
-                helperText={validationErrors.name}
-              />
-              <TextField
-                label="Role/Position"
-                value={newStaff.role}
-                onChange={(e) => handleNewStaffChange('role', e.target.value)}
-                fullWidth
-                required
-                error={!!validationErrors.role}
-                helperText={validationErrors.role}
-              />
-              <TextField
-                label="Email Address"
-                type="email"
-                value={newStaff.email}
-                onChange={(e) => handleNewStaffChange('email', e.target.value)}
-                fullWidth
-                placeholder="example@email.com"
-                error={!!validationErrors.email}
-                helperText={validationErrors.email}
-              />
-              <TextField
-                label="Phone Number"
-                value={newStaff.phone}
-                onChange={(e) => handleNewStaffChange('phone', e.target.value)}
-                fullWidth
-                placeholder="+44 7700 900000"
-                error={!!validationErrors.phone}
-                helperText={validationErrors.phone}
-              />
-              <TextField
-                label="Address"
-                value={newStaff.address}
-                onChange={(e) => handleNewStaffChange('address', e.target.value)}
-                fullWidth
-                multiline
-                rows={2}
-                placeholder="Street, City, Postcode"
-                error={!!validationErrors.address}
-                helperText={validationErrors.address}
-              />
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={newStaff.status}
-                  label="Status"
-                  onChange={(e) => handleNewStaffChange('status', e.target.value)}
-                >
-                  <MenuItem value="Available">Available</MenuItem>
-                  <MenuItem value="Unavailable">Unavailable</MenuItem>
-                </Select>
-              </FormControl>
-              <FormControl fullWidth>
-                <InputLabel>Readiness</InputLabel>
-                <Select
-                  value={newStaff.readiness}
-                  label="Readiness"
-                  onChange={(e) => handleNewStaffChange('readiness', e.target.value)}
-                >
-                  <MenuItem value="Ready">Ready</MenuItem>
-                  <MenuItem value="Pending">Pending</MenuItem>
-                </Select>
-              </FormControl>
-            </Stack>
-         </DialogContent>
-                   <DialogActions>
-            <Button onClick={handleCloseAddStaffDialog}>Cancel</Button>
-            <Button 
-              onClick={handleAddStaff} 
-              variant="contained" 
-              color="success"
-              disabled={!newStaff.name.trim() || !newStaff.role.trim() || !newStaff.email.trim()}
-            >
-              Add Staff
-            </Button>
-          </DialogActions>
-               </Dialog>
-
-        {/* Edit Staff Dialog */}
-        <Dialog open={editStaffDialog} onClose={handleCloseEditStaffDialog} fullWidth maxWidth="sm">
-          <DialogTitle>Edit Staff Member</DialogTitle>
-          <DialogContent>
-            <Stack spacing={2} sx={{ mt: 1 }}>
-              <TextField
-                label="Full Name"
-                value={newStaff.name}
-                onChange={(e) => handleNewStaffChange('name', e.target.value)}
-                fullWidth
-                required
-                error={!!validationErrors.name}
-                helperText={validationErrors.name}
-              />
-              <TextField
-                label="Role/Position"
-                value={newStaff.role}
-                onChange={(e) => handleNewStaffChange('role', e.target.value)}
-                fullWidth
-                required
-                error={!!validationErrors.role}
-                helperText={validationErrors.role}
-              />
-              <TextField
-                label="Email Address"
-                type="email"
-                value={newStaff.email}
-                onChange={(e) => handleNewStaffChange('email', e.target.value)}
-                fullWidth
-                placeholder="example@email.com"
-                error={!!validationErrors.email}
-                helperText={validationErrors.email}
-              />
-              <TextField
-                label="Phone Number"
-                value={newStaff.phone}
-                onChange={(e) => handleNewStaffChange('phone', e.target.value)}
-                fullWidth
-                placeholder="+44 7700 900000"
-                error={!!validationErrors.phone}
-                helperText={validationErrors.phone}
-              />
-              <TextField
-                label="Address"
-                value={newStaff.address}
-                onChange={(e) => handleNewStaffChange('address', e.target.value)}
-                fullWidth
-                multiline
-                rows={2}
-                placeholder="Street, City, Postcode"
-                error={!!validationErrors.address}
-                helperText={validationErrors.address}
-              />
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  value={newStaff.status}
-                  label="Status"
-                  onChange={(e) => handleNewStaffChange('status', e.target.value)}
-                >
-                  <MenuItem value="Available">Available</MenuItem>
-                  <MenuItem value="Unavailable">Unavailable</MenuItem>
-                </Select>
-              </FormControl>
-              <FormControl fullWidth>
-                <InputLabel>Readiness</InputLabel>
-                <Select
-                  value={newStaff.readiness}
-                  label="Readiness"
-                  onChange={(e) => handleNewStaffChange('readiness', e.target.value)}
-                >
-                  <MenuItem value="Ready">Ready</MenuItem>
-                  <MenuItem value="Pending">Pending</MenuItem>
-                </Select>
-              </FormControl>
-            </Stack>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseEditStaffDialog}>Cancel</Button>
-            <Button 
-              onClick={handleUpdateStaff} 
-              variant="contained" 
-              color="primary"
-              disabled={!newStaff.name.trim() || !newStaff.role.trim() || !newStaff.email.trim()}
-            >
-              Update Staff
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
-    );
-  } 
+      {/* Edit Staff Dialog */}
+      <Dialog open={editStaffDialog} onClose={handleCloseEditStaffDialog} fullWidth maxWidth="sm">
+                 <DialogTitle>Edit Team Member</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Full Name"
+              value={newStaff.name}
+              onChange={(e) => handleNewStaffChange('name', e.target.value)}
+              fullWidth
+              required
+              error={!!validationErrors.name}
+              helperText={validationErrors.name}
+            />
+            <TextField
+              label="Role/Position"
+              value={newStaff.role}
+              onChange={(e) => handleNewStaffChange('role', e.target.value)}
+              fullWidth
+              required
+              error={!!validationErrors.role}
+              helperText={validationErrors.role}
+            />
+            <TextField
+              label="Email Address"
+              type="email"
+              value={newStaff.email}
+              onChange={(e) => handleNewStaffChange('email', e.target.value)}
+              fullWidth
+              placeholder="example@email.com"
+              error={!!validationErrors.email}
+              helperText={validationErrors.email}
+            />
+            <TextField
+              label="Phone Number"
+              value={newStaff.phone}
+              onChange={(e) => handleNewStaffChange('phone', e.target.value)}
+              fullWidth
+              placeholder="+44 7700 900000"
+              error={!!validationErrors.phone}
+              helperText={validationErrors.phone}
+            />
+            <TextField
+              label="Address"
+              value={newStaff.address}
+              onChange={(e) => handleNewStaffChange('address', e.target.value)}
+              fullWidth
+              multiline
+              rows={2}
+              placeholder="Street, City, Postcode"
+              error={!!validationErrors.address}
+              helperText={validationErrors.address}
+            />
+            <FormControl fullWidth>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={newStaff.status}
+                label="Status"
+                onChange={(e) => handleNewStaffChange('status', e.target.value)}
+              >
+                <MenuItem value="Available">Available</MenuItem>
+                <MenuItem value="Unavailable">Unavailable</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Readiness</InputLabel>
+              <Select
+                value={newStaff.readiness}
+                label="Readiness"
+                onChange={(e) => handleNewStaffChange('readiness', e.target.value)}
+              >
+                <MenuItem value="Ready">Ready</MenuItem>
+                <MenuItem value="Pending">Pending</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseEditStaffDialog}>Cancel</Button>
+          <Button 
+            onClick={handleUpdateStaff} 
+            variant="contained" 
+            color="primary"
+            disabled={!newStaff.name.trim() || !newStaff.role.trim()}
+          >
+                         Update Team Member
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+}
