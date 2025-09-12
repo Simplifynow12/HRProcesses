@@ -316,9 +316,7 @@ Date: _________________`;
     // Template is automatically updated through state
   };
 
-  const hasValidEmail = (candidate: Candidate): boolean => {
-    return true; // Always return true to bypass email validation
-  };
+
 
 
 
