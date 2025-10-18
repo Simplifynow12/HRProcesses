@@ -135,6 +135,7 @@ function App() {
         <TrainingManagement 
           trainings={trainings}
           onTrainingsUpdate={handleUpdateTrainings}
+          userRole={loggedInUser?.role}
         />
       )
     },

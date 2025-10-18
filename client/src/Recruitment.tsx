@@ -5,11 +5,12 @@ import {
   Card,
   CardContent,
   Button,
-  Stepper,
-  Step,
-  StepLabel,
-  Chip,
   Stack,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
+  Chip,
   Table,
   TableBody,
   TableCell,
@@ -17,28 +18,28 @@ import {
   TableHead,
   TableRow,
   Paper,
-  IconButton,
+  Stepper,
+  Step,
+  StepLabel,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  Tooltip,
-  Avatar,
   Alert,
+  Tooltip,
+  IconButton,
 } from '@mui/material';
-import TimelineIcon from '@mui/icons-material/Timeline';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
+
 import VerifiedUserIcon from '@mui/icons-material/VerifiedUser';
 import CancelIcon from '@mui/icons-material/Cancel';
+import EditIcon from '@mui/icons-material/Edit';
+import SendIcon from '@mui/icons-material/Send';
+import DownloadIcon from '@mui/icons-material/Download';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 interface Candidate {
   name: string;
@@ -57,6 +58,13 @@ interface Check {
   label: string;
   status: 'Pending' | 'Passed' | 'Failed';
   file: string;
+  fileData?: {
+    name: string;
+    size: number;
+    type: string;
+    lastModified: number;
+    content: string; // Base64 encoded content
+  };
 }
 
 const recruitmentSteps = [
@@ -129,8 +137,6 @@ export default function Recruitment() {
   });
   
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
-  const [uploadDialog, setUploadDialog] = useState({ open: false, idx: -1 });
-  const [uploadFile, setUploadFile] = useState('');
   const [template, setTemplate] = useState('');
   const [templateDialog, setTemplateDialog] = useState(false);
   const [templateSubmitted, setTemplateSubmitted] = useState(false);
@@ -185,23 +191,104 @@ export default function Recruitment() {
     }));
   };
 
-  const handleUpload = () => {
-    if (uploadDialog.idx >= 0 && selectedCandidate) {
-      setStandby(prev => prev.map(candidate => {
-        if (candidate.name === selectedCandidate.name) {
-          const updatedChecks = [...candidate.checks];
-          updatedChecks[uploadDialog.idx] = {
-            ...updatedChecks[uploadDialog.idx],
-            file: uploadFile,
-            status: 'Passed'
-          };
-          return { ...candidate, checks: updatedChecks };
-        }
-        return candidate;
-      }));
+
+  const handleFileUpload = async (candidateName: string, checkIdx: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size must be less than 10MB');
+      return;
     }
-    setUploadDialog({ open: false, idx: -1 });
-    setUploadFile('');
+
+    // Validate file type (common document types)
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please upload a PDF, image, or document file');
+      return;
+    }
+
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        const fileData = {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified,
+          content: content
+        };
+
+        setStandby(prev => prev.map(candidate => {
+          if (candidate.name === candidateName) {
+            const updatedChecks = [...candidate.checks];
+            updatedChecks[checkIdx] = {
+              ...updatedChecks[checkIdx],
+              file: file.name,
+              fileData: fileData,
+              status: 'Passed'
+            };
+            return { ...candidate, checks: updatedChecks };
+          }
+          return candidate;
+        }));
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Error uploading file. Please try again.');
+    }
+  };
+
+  const handleFileDownload = (candidateName: string, checkIdx: number) => {
+    const candidate = standby.find(c => c.name === candidateName);
+    if (!candidate || !candidate.checks[checkIdx].fileData) return;
+
+    const fileData = candidate.checks[checkIdx].fileData;
+    const byteCharacters = atob(fileData.content.split(',')[1]);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: fileData.type });
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileData.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleFileRemove = (candidateName: string, checkIdx: number) => {
+    setStandby(prev => prev.map(candidate => {
+      if (candidate.name === candidateName) {
+        const updatedChecks = [...candidate.checks];
+        updatedChecks[checkIdx] = {
+          ...updatedChecks[checkIdx],
+          file: '',
+          fileData: undefined,
+          status: 'Pending'
+        };
+        return { ...candidate, checks: updatedChecks };
+      }
+      return candidate;
+    }));
   };
 
   const handleNextStage = (candidateName: string) => {
@@ -232,95 +319,78 @@ export default function Recruitment() {
     }));
   };
 
-  // Update selectedCandidate when standby changes
-  useEffect(() => {
-    if (selectedCandidate) {
-      const updated = standby.find(c => c.name === selectedCandidate.name);
-      setSelectedCandidate(updated || null);
-    }
-  }, [standby]);
+  const generateOfferLetter = (candidate: Candidate) => {
+    const template = editableOfferLetter;
+    return `Dear ${candidate.name},
 
-  const generateOfferLetter = () => {
-    if (!selectedCandidate) return '';
-    
-    const currentDate = new Date().toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-    
-    const position = editableOfferLetter.position || selectedCandidate.role;
-    
-    return `${editableOfferLetter.companyName}
-${editableOfferLetter.companyAddress}
+We are pleased to offer you the position of ${candidate.role} at ${template.companyName}.
 
-Date: ${currentDate}
+${template.companyName}
+${template.companyAddress}
 
-Dear ${selectedCandidate.name},
+Position: ${candidate.role}
+Start Date: ${template.startDate}
+Location: ${template.location}
+Employment Type: ${template.employmentType}
+Salary: ${template.salary}
 
-We are pleased to offer you the position of ${position} at ${editableOfferLetter.companyName}.
+Please respond by: ${template.responseDeadline}
 
-${editableOfferLetter.additionalTerms}
-
-Key Details:
-• Position: ${position}
-• Start Date: ${editableOfferLetter.startDate}
-• Location: ${editableOfferLetter.location}
-• Employment Type: ${editableOfferLetter.employmentType}
-• Salary: ${editableOfferLetter.salary}
-
-Please review this offer carefully. If you accept this offer, please respond within ${editableOfferLetter.responseDeadline}.
+${template.additionalTerms}
 
 We look forward to welcoming you to our team.
 
 Best regards,
-${editableOfferLetter.hrManager}
-HR Manager
-
-Reference: ${selectedCandidate.name.replace(/\s+/g, '').toUpperCase()}-${Date.now().toString().slice(-6)}
-
----
-E-Signature Required Below
-Please sign this document electronically to accept the offer.
-
-Candidate Signature: _________________
-Date: _________________
-
-HR Manager Signature: _________________
-Date: _________________`;
+${template.hrManager}
+HR Manager`;
   };
 
   const handleTemplateSubmit = () => {
     if (selectedCandidate && template) {
-      console.log(`E-signature offer letter sent to ${selectedCandidate.email || 'candidate'}`);
-      setTemplateSubmitted(true);
-      setTemplate('');
-      setTimeout(() => {
-        setTemplateSubmitted(false);
-      }, 5000);
+      // Validate email address before sending
+      const candidateEmail = selectedCandidate.email;
+      if (candidateEmail && candidateEmail.trim() !== '') {
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (emailRegex.test(candidateEmail)) {
+          console.log(`E-signature offer letter sent to ${candidateEmail}`);
+          // Here you would typically integrate with your email service
+          // For now, we'll show a success message with the email address
+          setTemplateSubmitted(true);
+          
+          // Reset template selection
+          setTemplate('');
+          
+          // Show success message
+          setTimeout(() => {
+            setTemplateSubmitted(false);
+          }, 5000);
+        } else {
+          console.error('Invalid email format:', candidateEmail);
+          alert(`Invalid email format: ${candidateEmail}. Please update the candidate's email address.`);
+        }
+      } else {
+        console.error('No valid email address found for candidate');
+        alert('No valid email address found for this candidate. Please add an email address before sending the offer letter.');
+      }
     }
     setTemplateDialog(false);
   };
 
   const handleEditOfferLetter = () => {
-    // Pre-populate position with candidate's role
-    setEditableOfferLetter(prev => ({
-      ...prev,
-      position: selectedCandidate?.role || ''
-    }));
-    setOfferLetterEdit(true);
+    if (selectedCandidate) {
+      setEditableOfferLetter(prev => ({
+        ...prev,
+        position: selectedCandidate.role
+      }));
+      setOfferLetterEdit(true);
+    }
   };
 
   const handleSaveOfferLetter = () => {
     setOfferLetterEdit(false);
     // Template is automatically updated through state
   };
-
-
-
-
-
-
 
   const handleAddStaff = () => {
     if (validateForm()) {
@@ -360,6 +430,100 @@ Date: _________________`;
     }
   };
 
+  const handleEditStaff = (candidate: Candidate) => {
+    setEditingCandidate(candidate);
+    setNewStaff({
+      name: candidate.name,
+      role: candidate.role,
+      status: candidate.status,
+      readiness: candidate.readiness,
+      email: candidate.email,
+      phone: candidate.phone,
+      address: candidate.address
+    });
+    setEditStaffDialog(true);
+  };
+
+  const handleUpdateStaff = () => {
+    if (validateForm() && editingCandidate) {
+      setStandby(prev => prev.map(candidate => {
+        if (candidate.name === editingCandidate.name) {
+          return {
+            ...candidate,
+            name: newStaff.name.trim(),
+            role: newStaff.role.trim(),
+            status: newStaff.status,
+            readiness: newStaff.readiness,
+            email: newStaff.email.trim(),
+            phone: newStaff.phone.trim(),
+            address: newStaff.address.trim(),
+          };
+        }
+        return candidate;
+      }));
+      
+      // Reset form and close dialog
+      setNewStaff({
+        name: '',
+        role: '',
+        status: 'Available',
+        readiness: 'Pending',
+        email: '',
+        phone: '',
+        address: ''
+      });
+      setValidationErrors({
+        name: '',
+        role: '',
+        email: '',
+        phone: '',
+        address: ''
+      });
+      setEditStaffDialog(false);
+      setEditingCandidate(null);
+    }
+  };
+
+  const handleCloseAddStaffDialog = () => {
+    setAddStaffDialog(false);
+    setNewStaff({
+      name: '',
+      role: '',
+      status: 'Available',
+      readiness: 'Pending',
+      email: '',
+      phone: '',
+      address: ''
+    });
+    setValidationErrors({
+      name: '',
+      role: '',
+      email: '',
+      phone: '',
+      address: ''
+    });
+  };
+
+  const handleCloseEditStaffDialog = () => {
+    setEditStaffDialog(false);
+    setEditingCandidate(null);
+    setNewStaff({
+      name: '',
+      role: '',
+      status: 'Available',
+      readiness: 'Pending',
+      email: '',
+      phone: '',
+      address: ''
+    });
+    setValidationErrors({
+      name: '',
+      role: '',
+      email: '',
+      phone: '',
+      address: ''
+    });
+  };
 
 
   const validatePhone = (phone: string): string => {
@@ -395,6 +559,20 @@ Date: _________________`;
     }
   };
 
+  const validateForm = (): boolean => {
+    const errors = {
+      name: validateField('name', newStaff.name),
+      role: validateField('role', newStaff.role),
+      email: validateField('email', newStaff.email),
+      phone: validateField('phone', newStaff.phone),
+      address: validateField('address', newStaff.address),
+    };
+    
+    setValidationErrors(errors);
+    
+    return Object.values(errors).every(error => error === '');
+  };
+
   const handleNewStaffChange = (field: string, value: string) => {
     setNewStaff(prev => ({
       ...prev,
@@ -410,671 +588,521 @@ Date: _________________`;
     }
   };
 
-  const handleCloseAddStaffDialog = () => {
-    setAddStaffDialog(false);
-    // Reset form and validation errors
-    setNewStaff({
-      name: '',
-      role: '',
-      status: 'Available',
-      readiness: 'Pending',
-      email: '',
-      phone: '',
-      address: ''
-    });
-    setValidationErrors({
-      name: '',
-      role: '',
-      email: '',
-      phone: '',
-      address: ''
-    });
+  const handleEditableOfferLetterChange = (field: string, value: string) => {
+    setEditableOfferLetter(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const handleEditStaff = (candidate: Candidate) => {
-    setEditingCandidate(candidate);
-    // Populate form with existing data
-    setNewStaff({
-      name: candidate.name,
-      role: candidate.role,
-      status: candidate.status,
-      readiness: candidate.readiness,
-      email: candidate.email,
-      phone: candidate.phone,
-      address: candidate.address
-    });
-    // Clear any existing validation errors
-    setValidationErrors({
-      name: '',
-      role: '',
-      email: '',
-      phone: '',
-      address: ''
-    });
-    setEditStaffDialog(true);
-  };
-
-  const handleUpdateStaff = () => {
-    if (editingCandidate && validateForm()) {
-      setStandby(prev => prev.map(candidate => {
-        if (candidate.name === editingCandidate.name) {
-          return {
-            ...candidate,
-            name: newStaff.name.trim(),
-            role: newStaff.role.trim(),
-            status: newStaff.status,
-            readiness: newStaff.readiness,
-            email: newStaff.email.trim(),
-            phone: newStaff.phone.trim(),
-            address: newStaff.address.trim(),
-          };
-        }
-        return candidate;
-      }));
-      
-      // Update selected candidate if it's the one being edited
-      if (selectedCandidate?.name === editingCandidate.name) {
-        setSelectedCandidate({
-          ...selectedCandidate,
-          name: newStaff.name.trim(),
-          role: newStaff.role.trim(),
-          status: newStaff.status,
-          readiness: newStaff.readiness,
-          email: newStaff.email.trim(),
-          phone: newStaff.phone.trim(),
-          address: newStaff.address.trim(),
-        });
-      }
-      
-      handleCloseEditStaffDialog();
+  // Update selectedCandidate when standby changes
+  useEffect(() => {
+    if (selectedCandidate) {
+      const updated = standby.find(c => c.name === selectedCandidate.name);
+      setSelectedCandidate(updated || null);
     }
-  };
-
-  const handleCloseEditStaffDialog = () => {
-    setEditStaffDialog(false);
-    setEditingCandidate(null);
-    // Reset form and validation errors
-    setNewStaff({
-      name: '',
-      role: '',
-      status: 'Available',
-      readiness: 'Pending',
-      email: '',
-      phone: '',
-      address: ''
-    });
-    setValidationErrors({
-      name: '',
-      role: '',
-      email: '',
-      phone: '',
-      address: ''
-    });
-  };
-
-  const validateForm = (): boolean => {
-    const errors = {
-      name: validateField('name', newStaff.name),
-      role: validateField('role', newStaff.role),
-      email: validateField('email', newStaff.email),
-      phone: validateField('phone', newStaff.phone),
-      address: validateField('address', newStaff.address)
-    };
-    
-    setValidationErrors(errors);
-    
-    // Form is valid if there are no error messages
-    return !Object.values(errors).some(error => error !== '');
-  };
+  }, [standby]);
 
   return (
-    <Box width="100%" display="flex" justifyContent="center">
-      <Box width="100%" maxWidth={900} mx={3}>
-        <Typography variant="h4" fontWeight={700} color="primary.main" mb={3}>
-          Recruitment Dashboard
-        </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-          {/* Team Member - always full width */}
-          <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #e3ffe8 0%, #eaf6ff 100%)', width: '100%' }}>
-            <CardContent>
-              <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-                <Stack direction="row" alignItems="center" spacing={2}>
-                  <GroupAddIcon color="success" fontSize="large" />
-                  <Typography variant="h5" fontWeight={600} color="success.main">
-                                         Team Member
-                  </Typography>
-                </Stack>
-                <Button
-                  variant="contained"
-                  color="success"
-                  startIcon={<GroupAddIcon />}
-                  onClick={() => setAddStaffDialog(true)}
-                >
-                  Add Team Member
-                </Button>
-              </Stack>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-                Click a name below to view candidate details and actions.
+    <Box sx={{ p: 3 }}>
+      {/* Header */}
+      <Typography variant="h3" fontWeight={800} color="primary.main" mb={3}>
+        Recruitment Management
+      </Typography>
+
+      {/* Success Alert */}
+      {templateSubmitted && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          E-signature offer letter has been sent successfully!
+        </Alert>
+      )}
+
+      {/* Team Member - always full width */}
+      <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #e3ffe8 0%, #eaf6ff 100%)', width: '100%' }}>
+        <CardContent>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <GroupAddIcon color="success" fontSize="large" />
+              <Typography variant="h5" fontWeight={600} color="success.main">
+                Team Member
               </Typography>
-              <TableContainer component={Paper}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Name</TableCell>
-                      <TableCell>Role</TableCell>
-                      <TableCell>Email</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Readiness</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {standby.map((c) => (
-                      <TableRow
-                        key={c.name}
-                        hover
-                        selected={selectedCandidate?.name === c.name}
-                        onClick={() => setSelectedCandidate(c)}
-                        sx={{ cursor: 'pointer' }}
-                      >
-                        <TableCell>
-                          <Stack direction="row" alignItems="center" spacing={2}>
-                            <Avatar sx={{ 
-                              width: 40, 
-                              height: 40,
-                              fontSize: '1rem'
-                            }}>
-                              {c.name.split(' ').map(n => n[0]).join('')}
-                            </Avatar>
-                            <Typography>
-                              {c.name}
-                            </Typography>
-                          </Stack>
-                        </TableCell>
-                        <TableCell>
-                          <Typography>
-                            {c.role}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary">
-                            {c.email || 'N/A'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={c.status}
-                            color={c.status === 'Available' ? 'success' : 'default'}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={c.readiness}
-                            color={c.readiness === 'Ready' ? 'info' : 'warning'}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                                                     <Tooltip title="Edit Team Member">
-                            <IconButton
-                              size="small"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEditStaff(c);
-                              }}
-                              color="primary"
-                            >
-                              <AssignmentIndIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+            </Stack>
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<GroupAddIcon />}
+              onClick={() => setAddStaffDialog(true)}
+            >
+              Add Team Member
+            </Button>
+          </Stack>
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
+            Click a name below to view candidate details and actions.
+          </Typography>
+          
+          <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+            <Table stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Role</TableCell>
+                  <TableCell>Email</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Readiness</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {standby.map((c) => (
+                  <TableRow 
+                    key={c.name} 
+                    hover 
+                    onClick={() => setSelectedCandidate(c)}
+                    sx={{ 
+                      cursor: 'pointer',
+                      backgroundColor: selectedCandidate?.name === c.name ? 'action.selected' : 'inherit'
+                    }}
+                  >
+                    <TableCell>
+                      <Stack direction="row" alignItems="center" spacing={2}>
+                        <Box
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: '50%',
+                            backgroundColor: 'primary.main',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '1.2rem',
+                          }}
+                        >
+                          {c.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                        </Box>
+                        <Typography variant="body1" fontWeight={600}>
+                          {c.name}
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>
+                      <Typography>
+                        {c.role}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        {c.email || 'N/A'}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={c.status}
+                        color={c.status === 'Available' ? 'success' : 'inherit'}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={c.readiness}
+                        color={c.readiness === 'Ready' ? 'success' : 'warning'}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Tooltip title="Edit Team Member">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditStaff(c);
+                          }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
+
+      {selectedCandidate && (
+        <>
+          {/* Selected candidate header */}
+          <Typography variant="h4" fontWeight={800} color="primary.main">
+            Selected: {selectedCandidate.name}
+          </Typography>
+          
+          {/* Contact Information */}
+          <Card elevation={2} sx={{ background: 'linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%)' }}>
+            <CardContent>
+              <Stack direction="row" spacing={4} flexWrap="wrap">
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Email</Typography>
+                  <Typography variant="body2">{selectedCandidate.email || 'Not provided'}</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">Phone</Typography>
+                  <Typography variant="body2">{selectedCandidate.phone || 'Not provided'}</Typography>
+                </Box>
+                <Box sx={{ minWidth: 200 }}>
+                  <Typography variant="caption" color="text.secondary">Address</Typography>
+                  <Typography variant="body2">{selectedCandidate.address || 'Not provided'}</Typography>
+                </Box>
+              </Stack>
             </CardContent>
           </Card>
 
-                     
-
-           {/* Selected candidate section */}
-           {selectedCandidate && (
-            <>
-              {/* Selected candidate header */}
-              <Typography variant="h4" fontWeight={800} color="primary.main">
-                Selected: {selectedCandidate.name}
-              </Typography>
+          {/* Standard Recruitment Workflow - Full width */}
+          <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #e3f0ff 0%, #eaf6ff 100%)' }}>
+            <CardContent>
+              <Stack direction="row" alignItems="center" spacing={2} mb={3}>
+                <VerifiedUserIcon color="primary" fontSize="large" />
+                <Typography variant="h5" fontWeight={600} color="primary.main">
+                  Recruitment Workflow
+                </Typography>
+              </Stack>
               
-              {/* Contact Information */}
-              <Card elevation={2} sx={{ background: 'linear-gradient(90deg, #f8f9fa 0%, #e9ecef 100%)' }}>
-                <CardContent>
-                  <Stack direction="row" spacing={4} flexWrap="wrap">
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">Email</Typography>
-                      <Typography variant="body2">{selectedCandidate.email || 'Not provided'}</Typography>
-                    </Box>
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">Phone</Typography>
-                      <Typography variant="body2">{selectedCandidate.phone || 'Not provided'}</Typography>
-                    </Box>
-                    <Box sx={{ minWidth: 200 }}>
-                      <Typography variant="caption" color="text.secondary">Address</Typography>
-                      <Typography variant="body2">{selectedCandidate.address || 'Not provided'}</Typography>
-                    </Box>
-                  </Stack>
-                </CardContent>
-              </Card>
-
-              {/* Standard Recruitment Workflow - Full width */}
-              <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #e3f0ff 0%, #eaf6ff 100%)' }}>
-                <CardContent>
-                  <Stack direction="row" alignItems="center" spacing={2} mb={2}>
-                    <TimelineIcon color="primary" fontSize="large" />
-                    <Typography variant="h5" fontWeight={600} color="primary.main">
-                      Standard Recruitment Workflow
-                    </Typography>
-                  </Stack>
-                  <Stepper 
-                    activeStep={selectedCandidate.recruitmentStage} 
-                    orientation="horizontal" 
-                    alternativeLabel
-                    sx={{ 
-                      overflowX: 'auto',
-                      '& .MuiStepLabel-label': {
-                        mt: 1,
-                        fontSize: '0.875rem'
-                      }
-                    }}
-                  >
-                    {recruitmentSteps.map((label, idx) => (
-                      <Step key={label} completed={selectedCandidate.recruitmentStage > idx}>
-                        <StepLabel onClick={() => handleNextStage(selectedCandidate.name)} style={{ cursor: 'pointer' }}>
-                          {label}
-                        </StepLabel>
-                      </Step>
-                    ))}
-                  </Stepper>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      onClick={() => handlePreviousStage(selectedCandidate.name)}
-                      disabled={selectedCandidate.recruitmentStage === 0}
-                    >
-                      Previous Stage
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => handleNextStage(selectedCandidate.name)}
-                    >
-                      Next Stage
-                    </Button>
-                  </Box>
-                </CardContent>
-              </Card>
-
-              {/* Background & Verification Checks and Signature Templates row */}
-              <Box sx={{ display: 'flex', gap: 3 }}>
-                {/* Background & Verification Checks - Left 2/3 */}
-                <Box sx={{ flex: 2 }}>
-                  <Card elevation={4} sx={{ height: '100%', background: 'linear-gradient(90deg, #fffbe7 0%, #e3f0ff 100%)' }}>
-                    <CardContent>
-                      <Stack direction="row" alignItems="center" spacing={2} mb={2}>
-                        <VerifiedUserIcon color="secondary" fontSize="large" />
-                        <Typography variant="h5" fontWeight={600} color="secondary.main">
-                          Background & Verification Checks
-                        </Typography>
-                      </Stack>
-                      <TableContainer component={Paper}>
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow>
-                              <TableCell>Check</TableCell>
-                              <TableCell>Status</TableCell>
-                              <TableCell>Evidence</TableCell>
-                              <TableCell>Actions</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {selectedCandidate.checks.map((check, idx) => (
-                              <TableRow key={check.label}>
-                                <TableCell>{check.label}</TableCell>
-                                <TableCell>
-                                  <Chip
-                                    label={check.status}
-                                    color={
-                                      check.status === 'Passed'
-                                        ? 'success'
-                                        : check.status === 'Failed'
-                                        ? 'error'
-                                        : 'warning'
-                                    }
-                                    size="small"
-                                  />
-                                </TableCell>
-                                <TableCell>
-                                  {check.file ? (
-                                    <Tooltip title="Download Evidence">
-                                      <IconButton>
-                                        <FileDownloadIcon color="primary" />
-                                      </IconButton>
-                                    </Tooltip>
-                                  ) : (
-                                    <Typography variant="caption" color="text.secondary">
-                                      No file
-                                    </Typography>
-                                  )}
-                                </TableCell>
-                                <TableCell>
-                                  <Stack direction="row" spacing={1}>
-                                    <Tooltip title="Upload Evidence">
-                                      <IconButton 
-                                        onClick={() => setUploadDialog({ open: true, idx })}
-                                        disabled={check.status === 'Failed'}
-                                      >
-                                        <UploadFileIcon color={check.status === 'Failed' ? 'disabled' : 'info'} />
-                                      </IconButton>
-                                    </Tooltip>
-                                    {check.status === 'Pending' && (
-                                      <Tooltip title="Mark as Failed">
-                                        <IconButton onClick={() => handleCheckStatus(selectedCandidate.name, idx, 'Failed')}>
-                                          <CancelIcon color="error" />
-                                        </IconButton>
-                                      </Tooltip>
-                                    )}
-                                    {check.status === 'Failed' && (
-                                      <Tooltip title="Reset to Pending">
-                                        <IconButton onClick={() => handleCheckStatus(selectedCandidate.name, idx, 'Pending')}>
-                                          <TimelineIcon color="warning" />
-                                        </IconButton>
-                                      </Tooltip>
-                                    )}
-                                  </Stack>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    </CardContent>
-                  </Card>
-                </Box>
-
-                {/* Signature Templates - Right 1/3 */}
-                <Box sx={{ flex: 1 }}>
-                  <Card elevation={4} sx={{ height: '100%', background: 'linear-gradient(90deg, #fffbe7 0%, #e3f0ff 100%)' }}>
-                    <CardContent>
-                      <Stack direction="row" alignItems="center" spacing={2} mb={2}>
-                        <AssignmentIndIcon color="secondary" fontSize="large" />
-                        <Typography variant="h5" fontWeight={600} color="secondary.main">
-                          Signature Templates
-                        </Typography>
-                      </Stack>
-                      <FormControl fullWidth sx={{ mb: 2 }}>
-                        <InputLabel>Select Template</InputLabel>
-                        <Select
-                          value={template}
-                          label="Select Template"
-                          onChange={(e) => setTemplate(e.target.value)}
-                        >
-                          {signatureTemplates.map((t) => (
-                            <MenuItem key={t} value={t}>{t}</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                      <Button
-                        variant="contained"
-                        color="secondary"
-                        disabled={!template}
-                        onClick={() => setOfferLetterPreview(true)}
-                        startIcon={<CheckCircleIcon />}
-                        fullWidth
-                      >
-                        Preview & Generate Document
-                      </Button>
-
-                      {templateSubmitted && (
-                        <Alert severity="success" sx={{ mt: 2 }}>
-                          E-signature offer letter sent to {selectedCandidate?.email || 'candidate email'}! The candidate can now electronically sign the document.
-                        </Alert>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Box>
+              <Stepper activeStep={selectedCandidate.recruitmentStage} alternativeLabel>
+                {recruitmentSteps.map((step) => (
+                  <Step key={step}>
+                    <StepLabel>{step}</StepLabel>
+                  </Step>
+                ))}
+              </Stepper>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={() => handlePreviousStage(selectedCandidate.name)}
+                  disabled={selectedCandidate.recruitmentStage === 0}
+                >
+                  Previous Stage
+                </Button>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => handleNextStage(selectedCandidate.name)}
+                >
+                  Next Stage
+                </Button>
               </Box>
-            </>
-          )}
-        </Box>
-      </Box>
+            </CardContent>
+          </Card>
 
-      {/* Upload Evidence Dialog */}
-      <Dialog open={uploadDialog.open} onClose={() => setUploadDialog({ open: false, idx: -1 })} fullWidth maxWidth="xs">
-        <DialogTitle>Upload Evidence</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="File Name (simulated)"
-            value={uploadFile}
-            onChange={(e) => setUploadFile(e.target.value)}
-            fullWidth
-            margin="normal"
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setUploadDialog({ open: false, idx: -1 })}>Cancel</Button>
-          <Button onClick={handleUpload} variant="contained" color="primary" disabled={!uploadFile.trim()}>
-            Upload
-          </Button>
-        </DialogActions>
-      </Dialog>
+          {/* Background Checks - Full width */}
+          <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #fff3e0 0%, #fff8e1 100%)' }}>
+            <CardContent>
+              <Stack direction="row" alignItems="center" spacing={2} mb={3}>
+                <VerifiedUserIcon color="warning" fontSize="large" />
+                <Typography variant="h5" fontWeight={600} color="warning.main">
+                  Background & Verification Checks
+                </Typography>
+              </Stack>
+              
+              <Stack spacing={3}>
+                {selectedCandidate.checks.map((check, idx) => (
+                  <Box key={idx} sx={{ p: 3, border: '1px solid #e0e0e0', borderRadius: 2, backgroundColor: '#fafafa' }}>
+                    {/* Check Header */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                      <Typography variant="h6" fontWeight={600}>
+                        {check.label}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                          size="small"
+                          variant={check.status === 'Pending' ? 'contained' : 'outlined'}
+                          color="inherit"
+                          onClick={() => handleCheckStatus(selectedCandidate.name, idx, 'Pending')}
+                        >
+                          Pending
+                        </Button>
+                        <Button
+                          size="small"
+                          variant={check.status === 'Passed' ? 'contained' : 'outlined'}
+                          color="success"
+                          startIcon={<VerifiedUserIcon />}
+                          onClick={() => handleCheckStatus(selectedCandidate.name, idx, 'Passed')}
+                        >
+                          Passed
+                        </Button>
+                        <Button
+                          size="small"
+                          variant={check.status === 'Failed' ? 'contained' : 'outlined'}
+                          color="error"
+                          startIcon={<CancelIcon />}
+                          onClick={() => handleCheckStatus(selectedCandidate.name, idx, 'Failed')}
+                        >
+                          Failed
+                        </Button>
+                      </Box>
+                    </Box>
+
+                    {/* File Upload Section */}
+                    <Box sx={{ mt: 2 }}>
+                      {check.fileData ? (
+                        /* File Display */
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2, backgroundColor: '#e8f5e8', borderRadius: 1, border: '1px solid #4caf50' }}>
+                          <AttachFileIcon color="success" />
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography variant="body2" fontWeight={600}>
+                              {check.fileData.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {(check.fileData.size / 1024).toFixed(1)} KB • {new Date(check.fileData.lastModified).toLocaleDateString()}
+                            </Typography>
+                          </Box>
+                          <Tooltip title="Download File">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleFileDownload(selectedCandidate.name, idx)}
+                              color="primary"
+                            >
+                              <DownloadIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Remove File">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleFileRemove(selectedCandidate.name, idx)}
+                              color="error"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      ) : (
+                        /* File Upload */
+                        <Box sx={{ p: 2, border: '2px dashed #ccc', borderRadius: 1, textAlign: 'center', backgroundColor: '#f9f9f9' }}>
+                          <input
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt"
+                            style={{ display: 'none' }}
+                            id={`file-upload-${idx}`}
+                            type="file"
+                            onChange={(e) => handleFileUpload(selectedCandidate.name, idx, e)}
+                          />
+                          <label htmlFor={`file-upload-${idx}`}>
+                            <Button
+                              variant="outlined"
+                              component="span"
+                              startIcon={<CloudUploadIcon />}
+                              sx={{ mb: 1 }}
+                            >
+                              Upload Document
+                            </Button>
+                          </label>
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            PDF, DOC, DOCX, JPG, PNG, TXT (Max 10MB)
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
+            </CardContent>
+          </Card>
+
+          {/* Signature Templates - Full width */}
+          <Card elevation={4} sx={{ background: 'linear-gradient(90deg, #f3e5f5 0%, #fce4ec 100%)' }}>
+            <CardContent>
+              <Stack direction="row" alignItems="center" spacing={2} mb={3}>
+                <SendIcon color="secondary" fontSize="large" />
+                <Typography variant="h5" fontWeight={600} color="secondary.main">
+                  E-Signature Templates
+                </Typography>
+              </Stack>
+              
+              <Stack direction="row" spacing={2} alignItems="center">
+                <FormControl sx={{ minWidth: 200 }}>
+                  <InputLabel>Select Template</InputLabel>
+                  <Select
+                    value={template}
+                    label="Select Template"
+                    onChange={(e) => setTemplate(e.target.value)}
+                  >
+                    {signatureTemplates.map((t) => (
+                      <MenuItem key={t} value={t}>{t}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                
+                <Button
+                  variant="outlined"
+                  startIcon={<SendIcon />}
+                  onClick={() => setOfferLetterPreview(true)}
+                  disabled={!template}
+                  sx={{ borderRadius: 3, fontWeight: 600 }}
+                >
+                  Preview Offer Letter
+                </Button>
+                
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={<SendIcon />}
+                  onClick={() => setTemplateDialog(true)}
+                  disabled={!template || !selectedCandidate.email || selectedCandidate.email.trim() === ''}
+                  sx={{ borderRadius: 3, fontWeight: 600 }}
+                >
+                  Send for E-Signature
+                </Button>
+              </Stack>
+              
+              {!selectedCandidate.email || selectedCandidate.email.trim() === '' ? (
+                <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                  Email address required to send offer letter
+                </Typography>
+              ) : (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                  Offer letter will be sent to: {selectedCandidate.email}
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {/* Signature Template Dialog */}
       <Dialog open={templateDialog} onClose={() => setTemplateDialog(false)} fullWidth maxWidth="xs">
-        <DialogTitle>Send E-Signature Offer Letter</DialogTitle>
+        <DialogTitle>Send for E-Signature</DialogTitle>
         <DialogContent>
           <Typography>
-            The e-signature offer letter will be sent to <strong>{selectedCandidate?.email || 'candidate'}</strong> for the position of <strong>{selectedCandidate?.role}</strong>.
+            Document "{template}" will be generated and sent to the candidate for e-signature!
           </Typography>
-          <Alert severity="info" sx={{ mt: 2 }}>
-            This will send the offer letter with e-signature fields directly to the candidate's email address.
-          </Alert>
-          <Alert severity="warning" sx={{ mt: 1 }}>
-            The candidate will be able to electronically sign the document to accept the offer.
-          </Alert>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setTemplateDialog(false)}>Cancel</Button>
-                      <Button 
-              onClick={handleTemplateSubmit} 
-              variant="contained" 
-              color="secondary"
-            >
-              Send E-Signature Offer Letter
-            </Button>
+          <Button onClick={handleTemplateSubmit} variant="contained" color="secondary">
+            Send
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Offer Letter Preview Dialog */}
-      <Dialog 
-        open={offerLetterPreview} 
-        onClose={() => setOfferLetterPreview(false)} 
-        fullWidth 
-        maxWidth="md"
-        PaperProps={{
-          sx: { minHeight: '70vh' }
-        }}
-      >
+      <Dialog open={offerLetterPreview} onClose={() => setOfferLetterPreview(false)} fullWidth maxWidth="md">
         <DialogTitle>
           <Stack direction="row" alignItems="center" justifyContent="space-between">
             <Typography variant="h6">Offer Letter Preview</Typography>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={handleEditOfferLetter}
-                startIcon={<AssignmentIndIcon />}
-              >
-                Edit Template
-              </Button>
-              <Typography variant="caption" color="text.secondary">
-                {selectedCandidate?.name} - {selectedCandidate?.role}
-              </Typography>
-            </Stack>
+            <Button
+              variant="outlined"
+              startIcon={<EditIcon />}
+              onClick={handleEditOfferLetter}
+              size="small"
+            >
+              Edit Template
+            </Button>
           </Stack>
         </DialogTitle>
         <DialogContent>
           <Box sx={{ 
+            p: 2, 
             border: '1px solid #e0e0e0', 
             borderRadius: 1, 
-            p: 3, 
             backgroundColor: '#fafafa',
-            fontFamily: 'serif',
-            fontSize: '14px',
-            lineHeight: 1.6,
+            fontFamily: 'monospace',
             whiteSpace: 'pre-line'
           }}>
-            {generateOfferLetter()}
-          </Box>
-          <Box sx={{ mt: 2, p: 2, backgroundColor: '#f5f5f5', borderRadius: 1 }}>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Recipient:</strong> {selectedCandidate?.email}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              <strong>Generated:</strong> {new Date().toLocaleString('en-GB')}
-            </Typography>
-            
+            {selectedCandidate && generateOfferLetter(selectedCandidate)}
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOfferLetterPreview(false)}>
-            Cancel
+          <Button onClick={() => setOfferLetterPreview(false)}>Close</Button>
+          <Button 
+            onClick={() => {
+              setOfferLetterPreview(false);
+              setTemplateDialog(true);
+            }} 
+            variant="contained" 
+            color="secondary"
+            disabled={!selectedCandidate?.email || selectedCandidate.email.trim() === ''}
+          >
+            Send for E-Signature
           </Button>
-                     <Button 
-             onClick={() => {
-               setOfferLetterPreview(false);
-               setTemplateDialog(true);
-             }} 
-             variant="contained" 
-             color="secondary"
-           >
-             Send Offer Letter
-           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Edit Offer Letter Template Dialog */}
-      <Dialog 
-        open={offerLetterEdit} 
-        onClose={() => setOfferLetterEdit(false)} 
-        fullWidth 
-        maxWidth="md"
-      >
+      <Dialog open={offerLetterEdit} onClose={() => setOfferLetterEdit(false)} fullWidth maxWidth="md">
         <DialogTitle>Edit Offer Letter Template</DialogTitle>
         <DialogContent>
-          <Stack spacing={3} sx={{ mt: 1 }}>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                label="Company Name"
-                value={editableOfferLetter.companyName}
-                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, companyName: e.target.value }))}
-                fullWidth
-              />
-              <TextField
-                label="HR Manager Name"
-                value={editableOfferLetter.hrManager}
-                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, hrManager: e.target.value }))}
-                fullWidth
-              />
-            </Box>
-            
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Company Name"
+              value={editableOfferLetter.companyName}
+              onChange={(e) => handleEditableOfferLetterChange('companyName', e.target.value)}
+              fullWidth
+            />
             <TextField
               label="Company Address"
               value={editableOfferLetter.companyAddress}
-              onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, companyAddress: e.target.value }))}
+              onChange={(e) => handleEditableOfferLetterChange('companyAddress', e.target.value)}
               fullWidth
               multiline
               rows={2}
             />
-
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                label="Position"
-                value={editableOfferLetter.position}
-                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, position: e.target.value }))}
-                fullWidth
-              />
-              <TextField
-                label="Start Date"
-                value={editableOfferLetter.startDate}
-                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, startDate: e.target.value }))}
-                fullWidth
-              />
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                label="Location"
-                value={editableOfferLetter.companyAddress}
-                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, location: e.target.value }))}
-                fullWidth
-              />
-              <TextField
-                label="Employment Type"
-                value={editableOfferLetter.employmentType}
-                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, employmentType: e.target.value }))}
-                fullWidth
-              />
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                label="Salary"
-                value={editableOfferLetter.salary}
-                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, salary: e.target.value }))}
-                fullWidth
-              />
-              <TextField
-                label="Response Deadline"
-                value={editableOfferLetter.responseDeadline}
-                onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, responseDeadline: e.target.value }))}
-                fullWidth
-              />
-            </Box>
-
             <TextField
-              label="Additional Terms & Conditions"
+              label="HR Manager Name"
+              value={editableOfferLetter.hrManager}
+              onChange={(e) => handleEditableOfferLetterChange('hrManager', e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Start Date"
+              value={editableOfferLetter.startDate}
+              onChange={(e) => handleEditableOfferLetterChange('startDate', e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Location"
+              value={editableOfferLetter.location}
+              onChange={(e) => handleEditableOfferLetterChange('location', e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Employment Type"
+              value={editableOfferLetter.employmentType}
+              onChange={(e) => handleEditableOfferLetterChange('employmentType', e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Salary"
+              value={editableOfferLetter.salary}
+              onChange={(e) => handleEditableOfferLetterChange('salary', e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Response Deadline"
+              value={editableOfferLetter.responseDeadline}
+              onChange={(e) => handleEditableOfferLetterChange('responseDeadline', e.target.value)}
+              fullWidth
+            />
+            <TextField
+              label="Additional Terms"
               value={editableOfferLetter.additionalTerms}
-              onChange={(e) => setEditableOfferLetter(prev => ({ ...prev, additionalTerms: e.target.value }))}
+              onChange={(e) => handleEditableOfferLetterChange('additionalTerms', e.target.value)}
               fullWidth
               multiline
-              rows={4}
-              helperText="Customize the terms and conditions for this offer"
+              rows={3}
             />
-
-            <Alert severity="info">
-              Changes made here will be reflected in the offer letter preview above.
-            </Alert>
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOfferLetterEdit(false)}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSaveOfferLetter} 
-            variant="contained" 
-            color="primary"
-          >
-            Save Changes
+          <Button onClick={() => setOfferLetterEdit(false)}>Cancel</Button>
+          <Button onClick={handleSaveOfferLetter} variant="contained" color="primary">
+            Save Template
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Add Staff Dialog */}
       <Dialog open={addStaffDialog} onClose={handleCloseAddStaffDialog} fullWidth maxWidth="sm">
-                 <DialogTitle>Add New Team Member</DialogTitle>
+        <DialogTitle>Add New Team Member</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
@@ -1096,12 +1124,11 @@ Date: _________________`;
               helperText={validationErrors.role}
             />
             <TextField
-              label="Email Address"
-              type="email"
+              label="Email"
               value={newStaff.email}
               onChange={(e) => handleNewStaffChange('email', e.target.value)}
               fullWidth
-              placeholder="example@email.com"
+              type="email"
               error={!!validationErrors.email}
               helperText={validationErrors.email}
             />
@@ -1110,7 +1137,6 @@ Date: _________________`;
               value={newStaff.phone}
               onChange={(e) => handleNewStaffChange('phone', e.target.value)}
               fullWidth
-              placeholder="+44 7700 900000"
               error={!!validationErrors.phone}
               helperText={validationErrors.phone}
             />
@@ -1121,7 +1147,6 @@ Date: _________________`;
               fullWidth
               multiline
               rows={2}
-              placeholder="Street, City, Postcode"
               error={!!validationErrors.address}
               helperText={validationErrors.address}
             />
@@ -1157,14 +1182,14 @@ Date: _________________`;
             color="success"
             disabled={!newStaff.name.trim() || !newStaff.role.trim()}
           >
-            Add Staff
+            Add Team Member
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Edit Staff Dialog */}
       <Dialog open={editStaffDialog} onClose={handleCloseEditStaffDialog} fullWidth maxWidth="sm">
-                 <DialogTitle>Edit Team Member</DialogTitle>
+        <DialogTitle>Edit Team Member</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
@@ -1186,12 +1211,11 @@ Date: _________________`;
               helperText={validationErrors.role}
             />
             <TextField
-              label="Email Address"
-              type="email"
+              label="Email"
               value={newStaff.email}
               onChange={(e) => handleNewStaffChange('email', e.target.value)}
               fullWidth
-              placeholder="example@email.com"
+              type="email"
               error={!!validationErrors.email}
               helperText={validationErrors.email}
             />
@@ -1200,7 +1224,6 @@ Date: _________________`;
               value={newStaff.phone}
               onChange={(e) => handleNewStaffChange('phone', e.target.value)}
               fullWidth
-              placeholder="+44 7700 900000"
               error={!!validationErrors.phone}
               helperText={validationErrors.phone}
             />
@@ -1211,7 +1234,6 @@ Date: _________________`;
               fullWidth
               multiline
               rows={2}
-              placeholder="Street, City, Postcode"
               error={!!validationErrors.address}
               helperText={validationErrors.address}
             />
@@ -1247,7 +1269,7 @@ Date: _________________`;
             color="primary"
             disabled={!newStaff.name.trim() || !newStaff.role.trim()}
           >
-                         Update Team Member
+            Update Team Member
           </Button>
         </DialogActions>
       </Dialog>
