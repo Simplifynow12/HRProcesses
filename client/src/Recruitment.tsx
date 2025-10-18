@@ -257,6 +257,8 @@ export default function Recruitment() {
     if (!candidate || !candidate.checks[checkIdx].fileData) return;
 
     const fileData = candidate.checks[checkIdx].fileData;
+    if (!fileData) return;
+    
     const byteCharacters = atob(fileData.content.split(',')[1]);
     const byteNumbers = new Array(byteCharacters.length);
     for (let i = 0; i < byteCharacters.length; i++) {
@@ -699,7 +701,7 @@ HR Manager`;
                     <TableCell>
                       <Chip
                         label={c.status}
-                        color={c.status === 'Available' ? 'success' : 'inherit'}
+                        color={c.status === 'Available' ? 'success' : 'default'}
                         size="small"
                       />
                     </TableCell>

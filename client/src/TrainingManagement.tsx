@@ -26,7 +26,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   Checkbox,
   Alert,
   LinearProgress,
@@ -39,7 +38,6 @@ import AddIcon from '@mui/icons-material/Add';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import PeopleIcon from '@mui/icons-material/People';
-import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import DownloadIcon from '@mui/icons-material/Download';
 import SelectAllIcon from '@mui/icons-material/SelectAll';
 
@@ -96,7 +94,7 @@ export default function TrainingManagement({ trainings, onTrainingsUpdate, userR
   const [selectedTrainings, setSelectedTrainings] = useState<number[]>([]);
   const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
-  const [analyticsData, setAnalyticsData] = useState({
+  const [analyticsData] = useState({
     totalTrainings: trainings.length,
     totalEnrollments: trainings.reduce((sum, t) => sum + (t.totalEnrollments || 0), 0),
     averageCompletion: trainings.reduce((sum, t) => sum + (t.completionRate || 0), 0) / trainings.length || 0,
@@ -290,7 +288,7 @@ export default function TrainingManagement({ trainings, onTrainingsUpdate, userR
       {/* Super Admin Tabs */}
       {isSuperAdmin && (
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-          <Tabs value={currentTab} onChange={(e, newValue) => setCurrentTab(newValue)}>
+          <Tabs value={currentTab} onChange={(_, newValue) => setCurrentTab(newValue)}>
             <Tab label="Training Programs" icon={<AssignmentIcon />} />
             <Tab label="Analytics & Reports" icon={<AnalyticsIcon />} />
             <Tab label="Employee Assignments" icon={<PeopleIcon />} />
@@ -361,7 +359,6 @@ export default function TrainingManagement({ trainings, onTrainingsUpdate, userR
                           <LinearProgress 
                             variant="determinate" 
                             value={training.completionRate || 0} 
-                            size="small"
                             sx={{ height: 6, borderRadius: 3 }}
                           />
                         </Box>
