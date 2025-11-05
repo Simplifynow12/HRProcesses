@@ -19,6 +19,23 @@ import {
   Chip,
   Stack,
   Alert,
+  Tabs,
+  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Tooltip,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  LinearProgress,
+  Divider,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import InfoIcon from '@mui/icons-material/Info';
@@ -27,6 +44,14 @@ import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 import GroupIcon from '@mui/icons-material/Group';
 import FeedbackIcon from '@mui/icons-material/Feedback';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
+import PeopleIcon from '@mui/icons-material/People';
+import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import DownloadIcon from '@mui/icons-material/Download';
+import SelectAllIcon from '@mui/icons-material/SelectAll';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 
 const steps = [
   'Mission, Vision & Values',
